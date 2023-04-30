@@ -1,0 +1,30 @@
+"[#] ci/cd":
+ - '.github/*'
+ - '.github/**/*'
+
+"[#] deps":
+ - 'go.mod'
+ - 'go.sum'
+
+"[#] doc":
+ - '*.md'
+ - 'doc/*'
+ - 'doc/**/*'
+ - 'examples/**/*'
+
+"[#] spock":
+ - '*.go'
+ - 'xsd/**/*'
+
+"[#] codec":
+ - 'encoding/*'
+ - 'encoding/**/*'
+
+"[#] dynamo":
+ - 'store/dynamo/*'
+ - 'store/dynamo/**/*'
+
+"[#] ephemeral":
+ - 'store/ephemeral/*'
+ - 'store/ephemeral/**/*'
+
