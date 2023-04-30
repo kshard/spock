@@ -122,11 +122,11 @@ func TestJsonLdUnmarshal(t *testing.T) {
 	t.Run("ArrayOfObjects", func(t *testing.T) {
 		it.Then(t).Should(
 			Codec(t, `[
-				{"@id": "id", "prop": "a"},
-				{"@id": "id", "porp": "b"}
+				{"@id": "id", "propa": "a"},
+				{"@id": "id", "propb": "b"}
 			]`).Equal(
-				spock.From("id", "prop", "a"),
-				spock.From("id", "porp", "b"),
+				spock.From("id", "propa", "a"),
+				spock.From("id", "propb", "b"),
 			),
 		)
 	})
@@ -137,8 +137,8 @@ func TestJsonLdUnmarshal(t *testing.T) {
 				"@graph": [
 					{
 						"@id": "a",
-						"prop": {"@id": "b"},
-						"porp": {"@id": "c"}
+						"propb": {"@id": "b"},
+						"propc": {"@id": "c"}
 					},
 					{
 						"@id": "b",
@@ -150,8 +150,8 @@ func TestJsonLdUnmarshal(t *testing.T) {
 					}
 				]
 			}`).Equal(
-				spock.From("a", "prop", curie.IRI("b")),
-				spock.From("a", "porp", curie.IRI("c")),
+				spock.From("a", "propb", curie.IRI("b")),
+				spock.From("a", "propc", curie.IRI("c")),
 				spock.From("b", "prop", "title"),
 				spock.From("c", "prop", "title"),
 			),

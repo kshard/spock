@@ -111,22 +111,6 @@ func typeOf(x any) reflect.Kind {
 	}
 }
 
-// func value[T comparable](x Value) T {
-// 	switch av := x.(type) {
-// 	case AnyURI:
-// 	case String:
-// 		return av.Value
-// 	}
-// }
-
-// func compareIt[T Value](t reflect.Kind, a T, b any) int {
-// 	if bv, ok := b.(T); ok {
-// 		return compare(a, bv)
-// 	} else {
-// 		return compare(t, typeOf(b))
-// 	}
-// }
-
 func compare[T interface {
 	~string |
 		~int | ~int8 | ~int16 | ~int32 | ~int64 |
@@ -142,13 +126,6 @@ func compare[T interface {
 		return 0
 	}
 }
-
-// type Comparable interface {
-// 	~string |
-// 		~int | ~int8 | ~int16 | ~int32 | ~int64 |
-// 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
-// 		~float32 | ~float64
-// }
 
 const (
 	OrdIRI = curieIRI("ord.iri")
