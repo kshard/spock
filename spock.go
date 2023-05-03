@@ -29,31 +29,25 @@ import (
 
 	"github.com/fogfish/curie"
 	"github.com/fogfish/guid/v2"
-	"github.com/kshard/spock/xsd"
+	"github.com/kshard/xsd"
 )
 
 // Knowledge statement
-//
-//	s: subject
-//	p: predicate
-//	o: object
-//	c: credibility
-//	k: k-order
 type SPOCK struct {
-	S curie.IRI
-	P curie.IRI
-	O xsd.Value
-	C float64
-	K guid.K
+	S xsd.AnyURI // s: subject
+	P xsd.AnyURI // p: predicate
+	O xsd.Value  // o: object
+	C float64    // c: credibility
+	K guid.K     // k: k-order
 }
 
 func (spock SPOCK) String() string {
-	return fmt.Sprintf("⟨%s %s %s⟩", spock.S.Safe(), spock.P.Safe(), spock.O)
+	return fmt.Sprintf("⟨%s %s %s⟩", spock.S, spock.P, spock.O)
 }
 
 // Create new knowledge statement From
 func From[T xsd.DataType](s, p curie.IRI, o T) SPOCK {
-	return SPOCK{S: s, P: p, O: xsd.From(o)}
+	return SPOCK{S: xsd.ToAnyURI(s), P: xsd.ToAnyURI(p), O: xsd.From(o)}
 }
 
 // Collection of knowledge statements

@@ -25,10 +25,7 @@ package spock
 //
 
 import (
-	"strings"
-
-	"github.com/fogfish/curie"
-	"github.com/kshard/spock/xsd"
+	"github.com/kshard/xsd"
 )
 
 // Stream of knowledge statements ⟨s,p,o,c,k⟩
@@ -109,35 +106,35 @@ func NewFilterO(hint Hint, q *Predicate[xsd.Value], stream Stream) Stream {
 	return stream
 }
 
-func NewFilterP(hint Hint, q *Predicate[curie.IRI], stream Stream) Stream {
+func NewFilterP(hint Hint, q *Predicate[xsd.AnyURI], stream Stream) Stream {
 	switch hint {
 	case HINT_MATCH:
 		return NewFilter(
 			func(spock SPOCK) bool { return spock.P == q.Value },
 			stream,
 		)
-	case HINT_FILTER_PREFIX:
-		return NewFilter(
-			func(spock SPOCK) bool { return strings.HasPrefix(string(spock.P), string(q.Value)) },
-			stream,
-		)
+		// case HINT_FILTER_PREFIX:
+		// 	return NewFilter(
+		// 		func(spock SPOCK) bool { return strings.HasPrefix(string(spock.P), string(q.Value)) },
+		// 		stream,
+		// 	)
 	}
 
 	return stream
 }
 
-func NewFilterS(hint Hint, q *Predicate[curie.IRI], stream Stream) Stream {
+func NewFilterS(hint Hint, q *Predicate[xsd.AnyURI], stream Stream) Stream {
 	switch hint {
 	case HINT_MATCH:
 		return NewFilter(
 			func(spock SPOCK) bool { return spock.S == q.Value },
 			stream,
 		)
-	case HINT_FILTER_PREFIX:
-		return NewFilter(
-			func(spock SPOCK) bool { return strings.HasPrefix(string(spock.S), string(q.Value)) },
-			stream,
-		)
+		// case HINT_FILTER_PREFIX:
+		// 	return NewFilter(
+		// 		func(spock SPOCK) bool { return strings.HasPrefix(string(spock.S), string(q.Value)) },
+		// 		stream,
+		// 	)
 	}
 
 	return stream
