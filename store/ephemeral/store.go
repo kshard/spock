@@ -25,23 +25,22 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/fogfish/curie"
 	"github.com/fogfish/guid/v2"
 	"github.com/fogfish/skiplist"
 	"github.com/kshard/spock"
-	"github.com/kshard/spock/xsd"
+	"github.com/kshard/xsd"
 )
 
 // Store is the instance of knowledge storage
 type Store struct {
 	size   int
 	random rand.Source
-	spo    spo
-	sop    sop
-	pso    pso
-	pos    pos
-	osp    osp
-	ops    ops
+	spo    spo // mml
+	sop    sop // mlm
+	pso    pso // mml
+	pos    pos // mlm
+	osp    osp // lmm
+	ops    ops // lmm
 }
 
 // Create new instance of knowledge storage
@@ -83,7 +82,7 @@ func Put(store *Store, spock spock.SPOCK) {
 	store.size++
 }
 
-func ensureForS(store *Store, s curie.IRI) (_po, _op) {
+func ensureForS(store *Store, s s) (_po, _op) {
 	_po, has := skiplist.Lookup(store.spo, s)
 	if !has {
 		_po = newPO(store.random)
@@ -98,7 +97,7 @@ func ensureForS(store *Store, s curie.IRI) (_po, _op) {
 	return _po, _op
 }
 
-func ensureForP(store *Store, p curie.IRI) (_so, _os) {
+func ensureForP(store *Store, p p) (_so, _os) {
 	_so, has := skiplist.Lookup(store.pso, p)
 	if !has {
 		_so = newSO(store.random)
@@ -113,7 +112,7 @@ func ensureForP(store *Store, p curie.IRI) (_so, _os) {
 	return _so, _os
 }
 
-func ensureForO(store *Store, o xsd.Value) (_sp, _ps) {
+func ensureForO(store *Store, o o) (_sp, _ps) {
 	_sp, has := skiplist.Lookup(store.osp, o)
 	if !has {
 		_sp = newSP(store.random)
@@ -136,7 +135,7 @@ func putO(store *Store, _po _po, _so _so, spock spock.SPOCK) {
 		skiplist.Put(_so, spock.S, __o)
 	}
 
-	skiplist.Put(__o, spock.O, spock.K)
+	skiplist.Put(__o, spock.O, struct{}{}) // spock.K)
 }
 
 func putP(store *Store, _op _op, _sp _sp, spock spock.SPOCK) {
@@ -147,7 +146,7 @@ func putP(store *Store, _op _op, _sp _sp, spock spock.SPOCK) {
 		skiplist.Put(_sp, spock.S, __p)
 	}
 
-	skiplist.Put(__p, spock.P, spock.K)
+	skiplist.Put(__p, spock.P, struct{}{}) // spock.K)
 }
 
 func putS(store *Store, _os _os, _ps _ps, spock spock.SPOCK) {
@@ -158,10 +157,22 @@ func putS(store *Store, _os _os, _ps _ps, spock spock.SPOCK) {
 		skiplist.Put(_ps, spock.P, __s)
 	}
 
-	skiplist.Put(__s, spock.S, spock.K)
+	skiplist.Put(__s, spock.S, struct{}{}) // spock.K)
 }
 
 func Match(store *Store, q spock.Pattern) (spock.Stream, error) {
+	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
+	if q.HintForP != spock.HINT_MATCH && q.HintForP != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
+	if q.HintForO != spock.HINT_MATCH && q.HintForO != spock.HINT_NONE && q.O.Value.XSDType() == xsd.XSD_ANYURI {
+		return nil, &notSupported{q}
+	}
+
 	switch q.Strategy {
 	case spock.STRATEGY_SPO:
 		return store.streamSPO(q)
@@ -178,4 +189,66 @@ func Match(store *Store, q spock.Pattern) (spock.Stream, error) {
 	default:
 		panic(fmt.Errorf("unknown strategy"))
 	}
+}
+
+func Stats(store *Store) {
+	fmt.Printf("==> spo %d\n", skiplist.Length(store.spo))
+	fmt.Printf("==> sop %d\n", skiplist.Length(store.sop))
+	fmt.Printf("==> pso %d\n", skiplist.Length(store.pso))
+	fmt.Printf("==> pos %d\n", skiplist.Length(store.pos))
+	fmt.Printf("==> osp %d\n", skiplist.Length(store.osp))
+	fmt.Printf("==> ops %d\n", skiplist.Length(store.ops))
+
+	// it := skiplist.Values(store.spo)
+	// for it.Next() {
+	// 	s, po := it.Head()
+	// 	fmt.Printf("==> spo %v %d\n", s, skiplist.Length(po))
+	// }
+
+	// it := skiplist.Values(store.sop)
+	// for it.Next() {
+	// 	s, op := it.Head()
+	// 	fmt.Printf("==> sop %v %d\n", s, skiplist.Length(op))
+	// }
+
+	// it := skiplist.Values(store.pso)
+	// for it.Next() {
+	// 	p, so := it.Head()
+	// 	fmt.Printf("==> pso %v %d\n", p, skiplist.Length(so))
+
+	// 	itt := skiplist.Values(so)
+	// 	for itt.Next() {
+	// 		s, o := itt.Head()
+	// 		if skiplist.Length(o) > 4 {
+	// 			fmt.Printf("==> pso %v %v, %d\n", p, s, skiplist.Length(o))
+	// 		}
+	// 	}
+	// }
+
+	// it := skiplist.Values(store.pos)
+	// for it.Next() {
+	// 	p, os := it.Head()
+	// 	fmt.Printf("==> pos %v %d\n", p, skiplist.Length(os))
+
+	// 	itt := skiplist.Values(os)
+	// 	for itt.Next() {
+	// 		o, s := itt.Head()
+	// 		if skiplist.Length(s) > 4 {
+	// 			fmt.Printf("==> pos %v %v, %d\n", p, o, skiplist.Length(s))
+	// 		}
+	// 	}
+	// }
+
+	// it := skiplist.Values(store.osp)
+	// for it.Next() {
+	// 	o, sp := it.Head()
+	// 	fmt.Printf("==> osp %v %d\n", o, skiplist.Length(sp))
+	// }
+
+	// it := skiplist.Values(store.ops)
+	// for it.Next() {
+	// 	o, ps := it.Head()
+	// 	fmt.Printf("==> ops %v %d\n", o, skiplist.Length(ps))
+	// }
+
 }

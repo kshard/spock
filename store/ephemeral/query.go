@@ -21,12 +21,9 @@
 package ephemeral
 
 import (
-	"strings"
-
-	"github.com/fogfish/curie"
 	"github.com/fogfish/skiplist"
 	"github.com/kshard/spock"
-	"github.com/kshard/spock/xsd"
+	"github.com/kshard/xsd"
 )
 
 // Each query results with sequence of "elements".
@@ -38,40 +35,49 @@ type Seq[K, V any] interface {
 
 // helper function to query the skiplist where key is curie.IRI
 func queryIRI[A, B any](
-	pred *spock.Predicate[curie.IRI],
-	list *skiplist.SkipList[curie.IRI, B],
+	pred *spock.Predicate[xsd.AnyURI],
+	list *skiplist.SkipList[s, B],
 ) Seq[A, B] {
-	var seq *skiplist.Iterator[curie.IRI, B]
+	var seq *skiplist.Iterator[s, B]
 
 	switch {
 	case pred == nil:
 		seq = skiplist.Values(list)
 	case pred.Clause == spock.EQ:
-		seq = skiplist.Slice(list, pred.Value, 1)
-	case pred.Clause == spock.PQ:
-		_, after := skiplist.Split(list, pred.Value)
-		if after == nil {
+		v, has := skiplist.Lookup(list, pred.Value)
+		if !has {
 			return nil
 		}
-		return NewTakeWhile[curie.IRI, B](
-			func(x curie.IRI) bool {
-				return strings.HasPrefix(string(x), string(pred.Value))
-			},
-			after,
-		).(Seq[A, B])
-	case pred.Clause == spock.LT:
-		seq, _ = skiplist.Split(list, pred.Value)
-	case pred.Clause == spock.GT:
-		_, seq = skiplist.Split(list, pred.Value)
-	case pred.Clause == spock.IN:
-		seq = skiplist.Range(list, pred.Value, pred.Other)
+		return Seq[s, B](&singleton[s, B]{key: pred.Value, val: v, next: true}).(Seq[A, B])
+	default:
+		panic("xxxxx xxx xxx")
+		// seq = skiplist.Slice(list, symbol.New(string(pred.Value)), 1)
+
+		//
+		// case pred.Clause == spock.PQ:
+		// 	_, after := skiplist.Split(list, pred.Value)
+		// 	if after == nil {
+		// 		return nil
+		// 	}
+		// 	return NewTakeWhile[curie.IRI, B](
+		// 		func(x curie.IRI) bool {
+		// 			return strings.HasPrefix(string(x), string(pred.Value))
+		// 		},
+		// 		after,
+		// 	).(Seq[A, B])
+		// case pred.Clause == spock.LT:
+		// 	seq, _ = skiplist.Split(list, pred.Value)
+		// case pred.Clause == spock.GT:
+		// 	_, seq = skiplist.Split(list, pred.Value)
+		// case pred.Clause == spock.IN:
+		// 	seq = skiplist.Range(list, pred.Value, pred.Other)
 	}
 
 	if seq == nil {
 		return nil
 	}
 
-	return Seq[curie.IRI, B](seq).(Seq[A, B])
+	return Seq[s, B](seq).(Seq[A, B])
 }
 
 // helper function to query the skiplist where key is xsd.Value
@@ -139,13 +145,32 @@ func (seq *takeWhile[A, B]) Next() bool {
 	return true
 }
 
+type singleton[K, V any] struct {
+	key  K
+	val  V
+	next bool
+}
+
+func (seq *singleton[K, V]) Head() (K, V) {
+	return seq.key, seq.val
+}
+
+func (seq *singleton[K, V]) Next() bool {
+	if seq.next {
+		seq.next = false
+		return true
+	}
+
+	return false
+}
+
 // take sequence elements while xsd.Value belongs to same category (type)
 type takeWhileType[T any] struct {
 	Seq[xsd.Value, T]
-	cat curie.IRI
+	cat xsd.Symbol
 }
 
-func NewTakeWhileType[T any](cat curie.IRI, seq Seq[xsd.Value, T]) Seq[xsd.Value, T] {
+func NewTakeWhileType[T any](cat xsd.Symbol, seq Seq[xsd.Value, T]) Seq[xsd.Value, T] {
 	return &takeWhileType[T]{Seq: seq, cat: cat}
 }
 
@@ -163,10 +188,10 @@ func (seq *takeWhileType[T]) Next() bool {
 
 type dropWhileType[T any] struct {
 	Seq[xsd.Value, T]
-	cat curie.IRI
+	cat xsd.Symbol
 }
 
-func NewDropWhileType[T any](cat curie.IRI, seq Seq[xsd.Value, T]) Seq[xsd.Value, T] {
+func NewDropWhileType[T any](cat xsd.Symbol, seq Seq[xsd.Value, T]) Seq[xsd.Value, T] {
 	return &dropWhileType[T]{Seq: seq, cat: cat}
 }
 

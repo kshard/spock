@@ -9,3 +9,5 @@ github.com/fogfish/skiplist v0.10.0 h1:xyv/SeYl4zm+bOBm9RduRBN6ukI4RZCBmNqHc+ZE0
 github.com/fogfish/skiplist v0.10.0/go.mod h1:2tYv4iOiHbG2gNkTHIgPCHfMzbWS5Yi47YkRlUD46wM=
 github.com/kshard/spock v0.1.0 h1:mHtY9q13R+s3QgQ+p3nuODnvVcU0DPEYN1MuxM3BzrY=
 github.com/kshard/spock v0.1.0/go.mod h1:Es1YyNbHLcmsJw9UwQ1KrB7Y/cHgoEsEtAo5AQuv104=
+github.com/kshard/xsd v0.1.0 h1:UBGV1a7zchuou9WH8xfMUcEg89ekFNMHaaE8zXWnUWY=
+github.com/kshard/xsd v0.1.0/go.mod h1:wUNtFazJt1pLwZ352Tj8/Y8MNrB6wOSoDYki/HxWpvs=

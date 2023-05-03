@@ -21,29 +21,77 @@
 package ephemeral
 
 import (
+	"fmt"
+
 	"github.com/kshard/spock"
 )
 
+type notSupported struct{ spock.Pattern }
+
+func (err notSupported) Error() string { return fmt.Sprintf("not supported %s", err.Pattern.Dump()) }
+func (notSupported) NotSupported()     {}
+
 func (store *Store) streamSPO(q spock.Pattern) (spock.Stream, error) {
+
 	return newIterator[s, p, o](querySPO(q), store.spo), nil
 }
 
 func (store *Store) streamSOP(q spock.Pattern) (spock.Stream, error) {
+	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
+	if q.HintForP != spock.HINT_MATCH && q.HintForP != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
 	return newIterator[s, o, p](querySOP(q), store.sop), nil
 }
 
 func (store *Store) streamPSO(q spock.Pattern) (spock.Stream, error) {
+	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
+	if q.HintForP != spock.HINT_MATCH && q.HintForP != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
 	return newIterator[p, s, o](queryPSO(q), store.pso), nil
 }
 
 func (store *Store) streamPOS(q spock.Pattern) (spock.Stream, error) {
+	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
+	if q.HintForP != spock.HINT_MATCH && q.HintForP != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
 	return newIterator[p, o, s](queryPOS(q), store.pos), nil
 }
 
 func (store *Store) streamOSP(q spock.Pattern) (spock.Stream, error) {
+	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
+	if q.HintForP != spock.HINT_MATCH && q.HintForP != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
 	return newIterator[o, s, p](queryOSP(q), store.osp), nil
 }
 
 func (store *Store) streamOPS(q spock.Pattern) (spock.Stream, error) {
+	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
+	if q.HintForP != spock.HINT_MATCH && q.HintForP != spock.HINT_NONE {
+		return nil, &notSupported{q}
+	}
+
 	return newIterator[o, p, s](queryOPS(q), store.ops), nil
 }
