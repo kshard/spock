@@ -27,8 +27,7 @@ package spock
 import (
 	"fmt"
 
-	"github.com/fogfish/curie"
-	"github.com/kshard/spock/xsd"
+	"github.com/kshard/xsd"
 )
 
 // Lookup strategy for knowledge statements
@@ -56,8 +55,8 @@ const (
 
 type Pattern struct {
 	Strategy                     Strategy
-	S                            *Predicate[curie.IRI]
-	P                            *Predicate[curie.IRI]
+	S                            *Predicate[xsd.AnyURI]
+	P                            *Predicate[xsd.AnyURI]
 	O                            *Predicate[xsd.Value]
 	HintForS, HintForP, HintForO Hint
 }
@@ -133,8 +132,8 @@ func (q Pattern) Dump() string {
 }
 
 func Query(
-	s *Predicate[curie.IRI],
-	p *Predicate[curie.IRI],
+	s *Predicate[xsd.AnyURI],
+	p *Predicate[xsd.AnyURI],
 	o *Predicate[xsd.Value],
 ) Pattern {
 	q := Pattern{

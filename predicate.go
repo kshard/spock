@@ -28,7 +28,7 @@ import (
 	"fmt"
 
 	"github.com/fogfish/curie"
-	"github.com/kshard/spock/xsd"
+	"github.com/kshard/xsd"
 )
 
 // types of predicate clauses
@@ -72,18 +72,19 @@ type iri string
 const IRI = iri("")
 
 // Makes `equal` to IRI predicate
-func (iri) Eq(value curie.IRI) *Predicate[curie.IRI] {
-	return &Predicate[curie.IRI]{Clause: EQ, Value: value}
+func (iri) Eq(value curie.IRI) *Predicate[xsd.AnyURI] {
+	return &Predicate[xsd.AnyURI]{Clause: EQ, Value: xsd.ToAnyURI(value)}
 }
 
-func (iri) Equal(value curie.IRI) *Predicate[curie.IRI] {
+func (iri) Equal(value curie.IRI) *Predicate[xsd.AnyURI] {
 	return IRI.Eq(value)
 }
 
 // Makes `prefix` to IRI predicate
-func (iri) HasPrefix(value curie.IRI) *Predicate[curie.IRI] {
-	return &Predicate[curie.IRI]{Clause: PQ, Value: value}
-}
+// func (iri) HasPrefix(value curie.IRI) *Predicate[xsd.AnyURI] {
+// 	return &Predicate[xsd.AnyURI]{Clause: PQ, Value: xsd.AnyURI(symbol.New(string(value)))}
+// 	// return &Predicate[curie.IRI]{Clause: PQ, Value: value}
+// }
 
 // Makes `equal to` value predicate
 func Eq[T xsd.DataType](value T) *Predicate[xsd.Value] {

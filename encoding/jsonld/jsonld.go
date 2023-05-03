@@ -82,16 +82,21 @@ func decodeArray(bag *Bag, s, p *curie.IRI, seq []any) error {
 }
 
 func decodeObject(bag *Bag, s, p *curie.IRI, obj map[string]any) error {
-	id, has := decodeObjectID(obj)
+	uid, has := decodeObjectID(obj)
 	if !has {
-		id = curie.New("_:%s", guid.L(guid.Clock))
+		uid = curie.New("_:%s", guid.L(guid.Clock))
 	}
 
 	if s != nil && p != nil {
-		*bag = append(*bag, spock.From(*s, *p, id))
+		*bag = append(*bag, spock.From(*s, *p, uid))
 	}
 
-	return decodeObjectProperties(bag, id, obj)
+	isa, has := decodeObjectType(obj)
+	if has {
+		*bag = append(*bag, spock.From(uid, curie.IRI("rdf:type"), isa))
+	}
+
+	return decodeObjectProperties(bag, uid, obj)
 }
 
 func decodeObjectID(obj map[string]any) (curie.IRI, bool) {
@@ -108,9 +113,31 @@ func decodeObjectID(obj map[string]any) (curie.IRI, bool) {
 	return curie.IRI(id), true
 }
 
+func decodeObjectType(obj map[string]any) (curie.IRI, bool) {
+	if iri, has := decodeObjectTypeFrom("@type", obj); has {
+		return iri, true
+	}
+
+	return decodeObjectTypeFrom("rdf:type", obj)
+}
+
+func decodeObjectTypeFrom(prop string, obj map[string]any) (curie.IRI, bool) {
+	raw, has := obj[prop]
+	if !has {
+		return "", false
+	}
+
+	id, ok := raw.(string)
+	if !ok {
+		return "", false
+	}
+
+	return curie.IRI(id), true
+}
+
 func decodeObjectProperties(bag *Bag, s curie.IRI, obj map[string]any) error {
 	for key, val := range obj {
-		if key == "@id" {
+		if key == "@id" || key == "@type" || key == "rdf:type" {
 			continue
 		}
 		p := curie.IRI(key)
