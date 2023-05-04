@@ -35,12 +35,12 @@ import (
 type Store struct {
 	size   int
 	random rand.Source
-	spo    spo // mml
-	sop    sop // mlm
-	pso    pso // mml
-	pos    pos // mlm
-	osp    osp // lmm
-	ops    ops // lmm
+	spo    spo
+	sop    sop
+	pso    pso
+	pos    pos
+	osp    osp
+	ops    ops
 }
 
 // Create new instance of knowledge storage
