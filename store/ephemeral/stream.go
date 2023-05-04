@@ -21,8 +21,15 @@
 package ephemeral
 
 import (
+	"fmt"
+
 	"github.com/kshard/spock"
 )
+
+type notSupported struct{ spock.Pattern }
+
+func (err notSupported) Error() string { return fmt.Sprintf("not supported %s", err.Pattern.Dump()) }
+func (notSupported) NotSupported()     {}
 
 func (store *Store) streamSPO(q spock.Pattern) (spock.Stream, error) {
 	return newIterator[s, p, o](querySPO(q), store.spo), nil

@@ -23,18 +23,16 @@ package ephemeral
 import (
 	"math/rand"
 
-	"github.com/fogfish/curie"
-	"github.com/fogfish/guid/v2"
 	"github.com/fogfish/skiplist"
-	"github.com/kshard/spock/xsd"
+	"github.com/kshard/xsd"
 )
 
 // components of <s,p,o,c,k> triple
-type s = curie.IRI // subject
-type p = curie.IRI // predicate
-type o = xsd.Value // object
-type c = float64   // credibility
-type k = guid.K    // k-order
+type s = xsd.AnyURI // subject
+type p = xsd.AnyURI // predicate
+type o = xsd.Value  // object
+type c = float64    // TODO: credibility
+type k = struct{}   // TODO: k-order guid.K
 
 // index types for 3rd faction
 type __s = *skiplist.SkipList[s, k]
@@ -58,20 +56,20 @@ type osp = *skiplist.SkipList[o, _sp]
 type ops = *skiplist.SkipList[o, _ps]
 
 // allocators for indexes
-func newS(rnd rand.Source) __s { return skiplist.New[s, k](xsd.OrdIRI, rnd) }
-func newP(rnd rand.Source) __p { return skiplist.New[p, k](xsd.OrdIRI, rnd) }
-func newO(rnd rand.Source) __o { return skiplist.New[o, k](xsd.OrdXSD, rnd) }
+func newS(rnd rand.Source) __s { return skiplist.New[s, k](xsd.OrdAnyURI, rnd) }
+func newP(rnd rand.Source) __p { return skiplist.New[p, k](xsd.OrdAnyURI, rnd) }
+func newO(rnd rand.Source) __o { return skiplist.New[o, k](xsd.OrdValue, rnd) }
 
-func newPO(rnd rand.Source) _po { return skiplist.New[p, __o](xsd.OrdIRI, rnd) }
-func newOP(rnd rand.Source) _op { return skiplist.New[o, __p](xsd.OrdXSD, rnd) }
-func newSO(rnd rand.Source) _so { return skiplist.New[s, __o](xsd.OrdIRI, rnd) }
-func newOS(rnd rand.Source) _os { return skiplist.New[o, __s](xsd.OrdXSD, rnd) }
-func newSP(rnd rand.Source) _sp { return skiplist.New[s, __p](xsd.OrdIRI, rnd) }
-func newPS(rnd rand.Source) _ps { return skiplist.New[p, __s](xsd.OrdIRI, rnd) }
+func newPO(rnd rand.Source) _po { return skiplist.New[p, __o](xsd.OrdAnyURI, rnd) }
+func newOP(rnd rand.Source) _op { return skiplist.New[o, __p](xsd.OrdValue, rnd) }
+func newSO(rnd rand.Source) _so { return skiplist.New[s, __o](xsd.OrdAnyURI, rnd) }
+func newOS(rnd rand.Source) _os { return skiplist.New[o, __s](xsd.OrdValue, rnd) }
+func newSP(rnd rand.Source) _sp { return skiplist.New[s, __p](xsd.OrdAnyURI, rnd) }
+func newPS(rnd rand.Source) _ps { return skiplist.New[p, __s](xsd.OrdAnyURI, rnd) }
 
-func newSPO(rnd rand.Source) spo { return skiplist.New[s, _po](xsd.OrdIRI, rnd) }
-func newSOP(rnd rand.Source) sop { return skiplist.New[s, _op](xsd.OrdIRI, rnd) }
-func newPSO(rnd rand.Source) pso { return skiplist.New[p, _so](xsd.OrdIRI, rnd) }
-func newPOS(rnd rand.Source) pos { return skiplist.New[p, _os](xsd.OrdIRI, rnd) }
-func newOSP(rnd rand.Source) osp { return skiplist.New[o, _sp](xsd.OrdXSD, rnd) }
-func newOPS(rnd rand.Source) ops { return skiplist.New[o, _ps](xsd.OrdXSD, rnd) }
+func newSPO(rnd rand.Source) spo { return skiplist.New[s, _po](xsd.OrdAnyURI, rnd) }
+func newSOP(rnd rand.Source) sop { return skiplist.New[s, _op](xsd.OrdAnyURI, rnd) }
+func newPSO(rnd rand.Source) pso { return skiplist.New[p, _so](xsd.OrdAnyURI, rnd) }
+func newPOS(rnd rand.Source) pos { return skiplist.New[p, _os](xsd.OrdAnyURI, rnd) }
+func newOSP(rnd rand.Source) osp { return skiplist.New[o, _sp](xsd.OrdValue, rnd) }
+func newOPS(rnd rand.Source) ops { return skiplist.New[o, _ps](xsd.OrdValue, rnd) }
