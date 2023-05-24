@@ -36,7 +36,7 @@ import (
 type SPOCK struct {
 	S xsd.AnyURI // s: subject
 	P xsd.AnyURI // p: predicate
-	O xsd.Value  // o: object
+	O xsd.Symbol // o: object
 	C float64    // c: credibility
 	K guid.K     // k: k-order
 }
@@ -46,9 +46,13 @@ func (spock SPOCK) String() string {
 }
 
 // Create new knowledge statement From
-func From[T xsd.DataType](s, p curie.IRI, o T) SPOCK {
-	return SPOCK{S: xsd.ToAnyURI(s), P: xsd.ToAnyURI(p), O: xsd.From(o)}
+func From[T ~string](s, p curie.IRI, o T) SPOCK {
+	return SPOCK{S: xsd.ToAnyURI(s), P: xsd.ToAnyURI(p), O: xsd.ToSymbol(string(o))}
 }
+
+// func From(s, p curie.IRI, o xsd.Symbol) SPOCK {
+// 	return SPOCK{S: xsd.ToAnyURI(s), P: xsd.ToAnyURI(p), O: o}
+// }
 
 // Collection of knowledge statements
 type Bag []SPOCK

@@ -57,7 +57,7 @@ type Pattern struct {
 	Strategy                     Strategy
 	S                            *Predicate[xsd.AnyURI]
 	P                            *Predicate[xsd.AnyURI]
-	O                            *Predicate[xsd.Value]
+	O                            *Predicate[xsd.Symbol]
 	HintForS, HintForP, HintForO Hint
 }
 
@@ -134,7 +134,7 @@ func (q Pattern) Dump() string {
 func Query(
 	s *Predicate[xsd.AnyURI],
 	p *Predicate[xsd.AnyURI],
-	o *Predicate[xsd.Value],
+	o *Predicate[xsd.Symbol],
 ) Pattern {
 	q := Pattern{
 		S: s, P: p, O: o,

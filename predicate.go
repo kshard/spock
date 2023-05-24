@@ -87,9 +87,15 @@ func (iri) Equal(value curie.IRI) *Predicate[xsd.AnyURI] {
 // }
 
 // Makes `equal to` value predicate
-func Eq[T xsd.DataType](value T) *Predicate[xsd.Value] {
-	return &Predicate[xsd.Value]{Clause: EQ, Value: xsd.From(value)}
+// func Eq[T xsd.DataType](value T) *Predicate[xsd.Value] {
+// 	return &Predicate[xsd.Value]{Clause: EQ, Value: xsd.From(value)}
+// }
+
+func Eq[T ~string](value T) *Predicate[xsd.Symbol] {
+	return &Predicate[xsd.Symbol]{Clause: EQ, Value: xsd.ToSymbol(string(value))}
 }
+
+//
 
 // Makes `prefix` value predicate
 func HasPrefix[T xsd.DataType](value T) *Predicate[xsd.Value] {
