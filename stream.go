@@ -20,9 +20,13 @@
 
 package spock
 
+import "github.com/fogfish/golem/trait/seq"
+
 //
 // The file define streaming protocol for hexastore
 //
+
+type Stream = seq.Seq[SPOCK]
 
 // // Stream of knowledge statements ⟨s,p,o,c,k⟩
 // type Stream interface {

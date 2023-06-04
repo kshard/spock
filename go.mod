@@ -8,3 +8,5 @@ require (
 	github.com/fogfish/it/v2 v2.0.1
 	github.com/kshard/xsd v0.1.0
 )
+
+replace github.com/kshard/xsd => ../../kshard/xsd

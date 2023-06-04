@@ -60,18 +60,18 @@ func (bag *Bag) UnmarshalJSON(b []byte) error {
 func decodeArray(bag *Bag, s, p *curie.IRI, seq []any) error {
 	for _, val := range seq {
 		switch o := val.(type) {
-		case float64:
-			if s != nil && p != nil {
-				*bag = append(*bag, spock.From(*s, *p, o))
-			}
+		// case float64:
+		// 	if s != nil && p != nil {
+		// 		*bag = append(*bag, spock.From(*s, *p, o))
+		// 	}
 		case string:
 			if s != nil && p != nil {
 				*bag = append(*bag, spock.From(*s, *p, o))
 			}
-		case bool:
-			if s != nil && p != nil {
-				*bag = append(*bag, spock.From(*s, *p, o))
-			}
+		// case bool:
+		// 	if s != nil && p != nil {
+		// 		*bag = append(*bag, spock.From(*s, *p, o))
+		// 	}
 		case map[string]any:
 			decodeObject(bag, s, p, o)
 		default:
@@ -143,12 +143,12 @@ func decodeObjectProperties(bag *Bag, s curie.IRI, obj map[string]any) error {
 		p := curie.IRI(key)
 
 		switch o := val.(type) {
-		case float64:
-			*bag = append(*bag, spock.From(s, p, o))
+		// case float64:
+		// 	*bag = append(*bag, spock.From(s, p, o))
 		case string:
 			*bag = append(*bag, spock.From(s, p, o))
-		case bool:
-			*bag = append(*bag, spock.From(s, p, o))
+		// case bool:
+		// 	*bag = append(*bag, spock.From(s, p, o))
 		case map[string]any:
 			if err := decodeNodeObject(bag, s, p, o); err != nil {
 				return err
@@ -183,12 +183,12 @@ func decodeNodeObject(bag *Bag, s, p curie.IRI, node map[string]any) error {
 func decodeNodeArray(bag *Bag, s, p curie.IRI, array []any) error {
 	for _, val := range array {
 		switch o := val.(type) {
-		case float64:
-			*bag = append(*bag, spock.From(s, p, o))
+		// case float64:
+		// 	*bag = append(*bag, spock.From(s, p, o))
 		case string:
 			*bag = append(*bag, spock.From(s, p, o))
-		case bool:
-			*bag = append(*bag, spock.From(s, p, o))
+		// case bool:
+		// 	*bag = append(*bag, spock.From(s, p, o))
 		case map[string]any:
 			decodeNodeObject(bag, s, p, o)
 		default:
@@ -201,12 +201,12 @@ func decodeNodeArray(bag *Bag, s, p curie.IRI, array []any) error {
 
 func decodeValue(bag *Bag, s, p curie.IRI, val any) error {
 	switch o := val.(type) {
-	case float64:
-		*bag = append(*bag, spock.From(s, p, o))
+	// case float64:
+	// 	*bag = append(*bag, spock.From(s, p, o))
 	case string:
 		*bag = append(*bag, spock.From(s, p, o))
-	case bool:
-		*bag = append(*bag, spock.From(s, p, o))
+	// case bool:
+	// 	*bag = append(*bag, spock.From(s, p, o))
 	default:
 		return fmt.Errorf("json-ld value codec do not support %T (%v)", val, val)
 	}

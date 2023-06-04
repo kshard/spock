@@ -32,6 +32,9 @@ import (
 	"github.com/kshard/xsd"
 )
 
+// TODO: SPOCK is generic just using xsd.type
+//       Symbols is specific to implementation
+
 // Knowledge statement
 type SPOCK struct {
 	S xsd.AnyURI // s: subject

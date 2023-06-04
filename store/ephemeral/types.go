@@ -58,12 +58,12 @@ type __o = *skiplist.Set[xsd.Symbol]
 // type _ps = *skiplist.SkipList[p, __s]
 
 // triple indexes
-type spo = *skiplist.Map[sp, __o]
-type sop = *skiplist.Map[so, __p]
-type pso = *skiplist.Map[ps, __o]
-type pos = *skiplist.Map[po, __s]
-type osp = *skiplist.Map[os, __p]
-type ops = *skiplist.Map[op, __s]
+// type spo = *skiplist.Map[sp, __o]
+// type sop = *skiplist.Map[so, __p]
+// type pso = *skiplist.Map[ps, __o]
+// type pos = *skiplist.Map[po, __s]
+// type osp = *skiplist.Map[os, __p]
+// type ops = *skiplist.Map[op, __s]
 
 // allocators for indexes
 // func newS(rnd rand.Source) __s { return skiplist.New[s, k](xsd.OrdAnyURI, rnd) }

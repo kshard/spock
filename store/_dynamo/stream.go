@@ -38,19 +38,20 @@ func (store *Store) streamSPO(ctx context.Context, graph curie.IRI, q spock.Patt
 
 	switch {
 	case q.HintForS == spock.HINT_MATCH && q.HintForP == spock.HINT_NONE:
-		key.SP = encodeII(q.S.Value, "")
+		key.SP = encodeI(store.iri, q.S.Value)
 	case q.HintForS == spock.HINT_MATCH && q.HintForP == spock.HINT_MATCH:
-		key.SP = encodeII(q.S.Value, q.P.Value)
+		key.SP = encodeII(store.iri, q.S.Value, q.P.Value)
 	case q.HintForS == spock.HINT_MATCH && q.HintForP == spock.HINT_FILTER_PREFIX:
-		key.SP = encodeII(q.S.Value, q.P.Value)
+		key.SP = encodeII(store.iri, q.S.Value, q.P.Value)
 	case q.HintForS == spock.HINT_FILTER_PREFIX && q.HintForP == spock.HINT_NONE:
-		key.SP = encodeI(q.S.Value)
+		key.SP = encodeI(store.iri, q.S.Value)
 	default:
 		return nil, &notSupported{q}
 	}
 
 	var stream spock.Stream = &Unfold[spo]{
-		seq: NewIterator(store.spo, key),
+		symbols: store.iri,
+		seq:     NewIterator(store.spo, key),
 	}
 
 	if q.O != nil {
@@ -65,19 +66,20 @@ func (store *Store) streamSOP(ctx context.Context, graph curie.IRI, q spock.Patt
 
 	switch {
 	case q.HintForS == spock.HINT_MATCH && q.HintForO == spock.HINT_NONE:
-		key.SO = encodeII(q.S.Value, "")
+		key.SO = encodeI(store.iri, q.S.Value)
 	case q.HintForS == spock.HINT_MATCH && q.HintForO == spock.HINT_MATCH:
-		key.SO = encodeIV(q.S.Value, q.O.Value)
+		key.SO = encodeIV(store.iri, q.S.Value, q.O.Value)
 	case q.HintForS == spock.HINT_MATCH && q.HintForO == spock.HINT_FILTER_PREFIX:
-		key.SO = encodeIV(q.S.Value, q.O.Value)
+		key.SO = encodeIV(store.iri, q.S.Value, q.O.Value)
 	case q.HintForS == spock.HINT_FILTER_PREFIX && q.HintForO == spock.HINT_NONE:
-		key.SO = encodeI(q.S.Value)
+		key.SO = encodeI(store.iri, q.S.Value)
 	default:
 		return nil, &notSupported{q}
 	}
 
 	var stream spock.Stream = &Unfold[sop]{
-		seq: NewIterator(store.sop, key),
+		symbols: store.iri,
+		seq:     NewIterator(store.sop, key),
 	}
 
 	if q.P != nil {
@@ -92,19 +94,20 @@ func (store *Store) streamPSO(ctx context.Context, graph curie.IRI, q spock.Patt
 
 	switch {
 	case q.HintForP == spock.HINT_MATCH && q.HintForS == spock.HINT_NONE:
-		key.PS = encodeII(q.P.Value, "")
+		key.PS = encodeI(store.iri, q.P.Value)
 	case q.HintForP == spock.HINT_MATCH && q.HintForS == spock.HINT_MATCH:
-		key.PS = encodeII(q.P.Value, q.S.Value)
+		key.PS = encodeII(store.iri, q.P.Value, q.S.Value)
 	case q.HintForP == spock.HINT_MATCH && q.HintForS == spock.HINT_FILTER_PREFIX:
-		key.PS = encodeII(q.P.Value, q.S.Value)
+		key.PS = encodeII(store.iri, q.P.Value, q.S.Value)
 	case q.HintForP == spock.HINT_FILTER_PREFIX && q.HintForS == spock.HINT_NONE:
-		key.PS = encodeI(q.P.Value)
+		key.PS = encodeI(store.iri, q.P.Value)
 	default:
 		return nil, &notSupported{q}
 	}
 
 	var stream spock.Stream = &Unfold[pso]{
-		seq: NewIterator(store.pso, key),
+		symbols: store.iri,
+		seq:     NewIterator(store.pso, key),
 	}
 
 	if q.O != nil {
@@ -119,19 +122,20 @@ func (store *Store) streamPOS(ctx context.Context, graph curie.IRI, q spock.Patt
 
 	switch {
 	case q.HintForP == spock.HINT_MATCH && q.HintForO == spock.HINT_NONE:
-		key.PO = encodeII(q.P.Value, "")
+		key.PO = encodeI(store.iri, q.P.Value)
 	case q.HintForP == spock.HINT_MATCH && q.HintForO == spock.HINT_MATCH:
-		key.PO = encodeIV(q.P.Value, q.O.Value)
+		key.PO = encodeIV(store.iri, q.P.Value, q.O.Value)
 	case q.HintForP == spock.HINT_MATCH && q.HintForO == spock.HINT_FILTER_PREFIX:
-		key.PO = encodeIV(q.P.Value, q.O.Value)
+		key.PO = encodeIV(store.iri, q.P.Value, q.O.Value)
 	case q.HintForP == spock.HINT_FILTER_PREFIX && q.HintForO == spock.HINT_NONE:
-		key.PO = encodeI(q.P.Value)
+		key.PO = encodeI(store.iri, q.P.Value)
 	default:
 		return nil, &notSupported{q}
 	}
 
 	var stream spock.Stream = &Unfold[pos]{
-		seq: NewIterator(store.pos, key),
+		symbols: store.iri,
+		seq:     NewIterator(store.pos, key),
 	}
 
 	if q.S != nil {
@@ -146,19 +150,20 @@ func (store *Store) streamOSP(ctx context.Context, graph curie.IRI, q spock.Patt
 
 	switch {
 	case q.HintForO == spock.HINT_MATCH && q.HintForS == spock.HINT_NONE:
-		key.OS = encodeVI(q.O.Value, "")
+		key.OS = encodeValue(store.iri, q.O.Value)
 	case q.HintForO == spock.HINT_MATCH && q.HintForS == spock.HINT_MATCH:
-		key.OS = encodeVI(q.O.Value, q.S.Value)
+		key.OS = encodeVI(store.iri, q.O.Value, q.S.Value)
 	case q.HintForO == spock.HINT_MATCH && q.HintForS == spock.HINT_FILTER_PREFIX:
-		key.OS = encodeVI(q.O.Value, q.S.Value)
+		key.OS = encodeVI(store.iri, q.O.Value, q.S.Value)
 	case q.HintForO == spock.HINT_FILTER_PREFIX && q.HintForS == spock.HINT_NONE:
-		key.OS = encodeValue(q.O.Value)
+		key.OS = encodeValue(store.iri, q.O.Value)
 	default:
 		return nil, &notSupported{q}
 	}
 
 	var stream spock.Stream = &Unfold[osp]{
-		seq: NewIterator(store.osp, key),
+		symbols: store.iri,
+		seq:     NewIterator(store.osp, key),
 	}
 
 	if q.P != nil {
@@ -173,19 +178,20 @@ func (store *Store) streamOPS(ctx context.Context, graph curie.IRI, q spock.Patt
 
 	switch {
 	case q.HintForO == spock.HINT_MATCH && q.HintForP == spock.HINT_NONE:
-		key.OP = encodeVI(q.O.Value, "")
+		key.OP = encodeValue(store.iri, q.O.Value)
 	case q.HintForO == spock.HINT_MATCH && q.HintForP == spock.HINT_MATCH:
-		key.OP = encodeVI(q.O.Value, q.P.Value)
+		key.OP = encodeVI(store.iri, q.O.Value, q.P.Value)
 	case q.HintForO == spock.HINT_MATCH && q.HintForP == spock.HINT_FILTER_PREFIX:
-		key.OP = encodeVI(q.O.Value, q.P.Value)
+		key.OP = encodeVI(store.iri, q.O.Value, q.P.Value)
 	case q.HintForO == spock.HINT_FILTER_PREFIX && q.HintForP == spock.HINT_NONE:
-		key.OP = encodeValue(q.O.Value)
+		key.OP = encodeValue(store.iri, q.O.Value)
 	default:
 		return nil, &notSupported{q}
 	}
 
 	var stream spock.Stream = &Unfold[ops]{
-		seq: NewIterator(store.ops, key),
+		symbols: store.iri,
+		seq:     NewIterator(store.ops, key),
 	}
 
 	if q.S != nil {

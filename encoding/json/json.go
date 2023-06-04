@@ -51,18 +51,18 @@ func (bag *Bag) UnmarshalJSON(b []byte) error {
 func decodeArray(bag *Bag, s, p *curie.IRI, seq []any) error {
 	for _, val := range seq {
 		switch o := val.(type) {
-		case float64:
-			if s != nil && p != nil {
-				*bag = append(*bag, spock.From(*s, *p, o))
-			}
+		// case float64:
+		// 	if s != nil && p != nil {
+		// 		*bag = append(*bag, spock.From(*s, *p, o))
+		// 	}
 		case string:
 			if s != nil && p != nil {
 				*bag = append(*bag, spock.From(*s, *p, o))
 			}
-		case bool:
-			if s != nil && p != nil {
-				*bag = append(*bag, spock.From(*s, *p, o))
-			}
+		// case bool:
+		// 	if s != nil && p != nil {
+		// 		*bag = append(*bag, spock.From(*s, *p, o))
+		// 	}
 		case map[string]any:
 			decodeObject(bag, s, p, o)
 		default:
@@ -110,12 +110,12 @@ func decodeObjectProperties(bag *Bag, s curie.IRI, obj map[string]any) error {
 		p := curie.IRI(key)
 
 		switch o := val.(type) {
-		case float64:
-			*bag = append(*bag, spock.From(s, p, o))
+		// case float64:
+		// 	*bag = append(*bag, spock.From(s, p, o))
 		case string:
 			*bag = append(*bag, spock.From(s, p, o))
-		case bool:
-			*bag = append(*bag, spock.From(s, p, o))
+		// case bool:
+		// 	*bag = append(*bag, spock.From(s, p, o))
 		case map[string]any:
 			if err := decodeObject(bag, &s, &p, o); err != nil {
 				return err

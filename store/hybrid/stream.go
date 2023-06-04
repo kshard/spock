@@ -1,30 +1,12 @@
-/*
-
-  Knowledge Graph: SPOCK
-  Copyright (C) 2016 - 2023 Dmitry Kolesnikov
-
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as published
-  by the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-*/
-
-package ephemeral
+package hybrid
 
 import (
 	"fmt"
 
+	"github.com/fogfish/faults"
 	"github.com/fogfish/golem/trait/pair"
 	"github.com/fogfish/golem/trait/seq"
+	"github.com/fogfish/segment"
 	"github.com/fogfish/skiplist"
 	"github.com/kshard/spock"
 	"github.com/kshard/xsd"
@@ -34,10 +16,6 @@ type notSupported struct{ spock.Pattern }
 
 func (err notSupported) Error() string { return fmt.Sprintf("not supported %s", err.Pattern.Dump()) }
 func (notSupported) NotSupported()     {}
-
-// TODO: query to stream builder
-// - e.g. limit stream
-// - skiplist define seq type (like iterator but only value)
 
 type X[C skiplist.Key] interface {
 	L1() (uint64, uint64)
@@ -51,12 +29,12 @@ func queryIRI[A, B, C skiplist.Key](
 	qB *spock.Predicate[B],
 	qC *spock.Predicate[C],
 	lv X[C],
-	list *skiplist.Map[uint64, *skiplist.Set[C]],
+	list *segment.Map[uint64, *skiplist.Set[C]],
 ) seq.Seq[spock.SPOCK] {
 	if qA != nil && qA.Clause == spock.EQ && qB != nil && qB.Clause == spock.EQ {
 		ab := lv.L2()
-		__x, has := list.Get(ab)
-		if !has {
+		__x, err := list.Get(ab)
+		if faults.IsNotFound(err) {
 			return nil
 		}
 
@@ -65,8 +43,11 @@ func queryIRI[A, B, C skiplist.Key](
 
 	if qA != nil && qA.Clause == spock.EQ {
 		ab, ab1 := lv.L1()
-		a__ := pair.TakeWhile[uint64, *skiplist.Set[C]](
-			skiplist.ForMap(list, list.Successors(ab)),
+		a__, err := list.Successors(ab)
+		if err != nil {
+			return nil
+		}
+		a__ = pair.TakeWhile(a__,
 			func(ab uint64, __x *skiplist.Set[C]) bool { return ab < ab1 },
 		)
 		return pair.JoinSeq(a__,
@@ -76,8 +57,11 @@ func queryIRI[A, B, C skiplist.Key](
 		)
 	}
 
-	a__ := skiplist.ForMap(list, list.Keys())
-	return pair.JoinSeq[uint64, *skiplist.Set[C]](a__,
+	a__, err := list.Values()
+	if err != nil {
+		return nil
+	}
+	return pair.JoinSeq(a__,
 		func(ab uint64, __x *skiplist.Set[C]) seq.Seq[spock.SPOCK] {
 			return lv.ToSPOCK(ab, queryXSD(qC, __x))
 		},

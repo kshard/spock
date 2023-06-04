@@ -7,6 +7,8 @@ require (
 	github.com/fogfish/dynamo/v2 v2.7.0
 	github.com/fogfish/it/v2 v2.0.1
 	github.com/kshard/spock v0.1.0
+	github.com/kshard/spock/internal/symbol v0.0.0-00010101000000-000000000000
+	github.com/kshard/xsd v0.1.0
 )
 
 require (
@@ -29,7 +31,9 @@ require (
 	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/fogfish/faults v0.2.0 // indirect
 	github.com/fogfish/golem/hseq v1.0.0 // indirect
-	github.com/fogfish/guid/v2 v2.0.2 // indirect
+	github.com/fogfish/guid/v2 v2.0.3 // indirect
 	github.com/fogfish/skiplist v0.10.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
+
+replace github.com/kshard/spock/internal/symbol => ../../internal/symbol

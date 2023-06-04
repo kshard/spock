@@ -1,56 +1,82 @@
-/*
-
-  Knowledge Graph: SPOCK
-  Copyright (C) 2016 - 2023 Dmitry Kolesnikov
-
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as published
-  by the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-*/
-
-package ephemeral
+package hybrid
 
 import (
 	"fmt"
 
+	"github.com/fogfish/faults"
 	"github.com/fogfish/golem/trait/seq"
-	"github.com/fogfish/guid/v2"
+	"github.com/fogfish/segment"
 	"github.com/fogfish/skiplist"
 	"github.com/kshard/spock"
 	"github.com/kshard/xsd"
 )
 
-// Store is the instance of knowledge storage
 type Store struct {
 	size int
-	spo  *skiplist.Map[sp, __o]
-	sop  *skiplist.Map[so, __p]
-	pso  *skiplist.Map[ps, __o]
-	pos  *skiplist.Map[po, __s]
-	osp  *skiplist.Map[os, __p]
-	ops  *skiplist.Map[op, __s]
+	spo  *segment.Map[sp, __o]
+	sop  *segment.Map[so, __p]
+	pso  *segment.Map[ps, __o]
+	pos  *segment.Map[po, __s]
+	osp  *segment.Map[os, __p]
+	ops  *segment.Map[op, __s]
 }
 
 // Create new instance of knowledge storage
-func New() *Store {
-	return &Store{
-		spo: skiplist.NewMap[sp, __o](),
-		sop: skiplist.NewMap[so, __p](),
-		pso: skiplist.NewMap[ps, __o](),
-		pos: skiplist.NewMap[po, __s](),
-		osp: skiplist.NewMap[os, __p](),
-		ops: skiplist.NewMap[op, __s](),
+func New(capacity int) (*Store, error) {
+	dspo := NewDynamo[xsd.Symbol]("spo")
+	spo, err := segment.New[sp, __o](capacity, nil, dspo, dspo)
+	if err != nil {
+		return nil, err
 	}
+
+	dsop := NewDynamo[xsd.AnyURI]("sop")
+	sop, err := segment.New[so, __p](capacity, nil, dsop, dsop)
+	if err != nil {
+		return nil, err
+	}
+
+	dpso := NewDynamo[xsd.Symbol]("pso")
+	pso, err := segment.New[ps, __o](capacity, nil, dpso, dpso)
+	if err != nil {
+		return nil, err
+	}
+
+	dpos := NewDynamo[xsd.AnyURI]("pos")
+	pos, err := segment.New[po, __s](capacity, nil, dpos, dpos)
+	if err != nil {
+		return nil, err
+	}
+
+	dosp := NewDynamo[xsd.AnyURI]("osp")
+	osp, err := segment.New[os, __p](capacity, nil, dosp, dosp)
+	if err != nil {
+		return nil, err
+	}
+
+	dops := NewDynamo[xsd.AnyURI]("ops")
+	ops, err := segment.New[op, __s](capacity, nil, dops, dops)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Store{
+		spo: spo,
+		sop: sop,
+		pso: pso,
+		pos: pos,
+		osp: osp,
+		ops: ops,
+	}, nil
+}
+
+func (store *Store) Sync() error {
+	store.spo.Sync()
+	store.sop.Sync()
+	store.pso.Sync()
+	store.pos.Sync()
+	store.osp.Sync()
+	store.ops.Sync()
+	return nil
 }
 
 // Size returns number of knowledge statements in the store
@@ -65,7 +91,7 @@ func (store *Store) Add(bag spock.Bag) {
 }
 
 func (store *Store) Put(spock spock.SPOCK) {
-	spock.K = guid.L(guid.Clock)
+	// spock.K = guid.L(guid.Clock)
 
 	store.putSuffixO(spock)
 	store.putSuffixS(spock)
@@ -77,9 +103,10 @@ func (store *Store) Put(spock spock.SPOCK) {
 func (store *Store) putSuffixO(spock spock.SPOCK) bool {
 	sp := uint64(spock.S)<<32 | uint64(spock.P)
 	ps := uint64(spock.P)<<32 | uint64(spock.S)
-	__o, has := store.spo.Get(sp)
-	if !has {
+	__o, err := store.spo.Get(sp)
+	if faults.IsNotFound(err) {
 		__o = skiplist.NewSet[xsd.Symbol]()
+		// TODO: error
 		store.spo.Put(sp, __o)
 		store.pso.Put(ps, __o)
 	}
@@ -90,9 +117,10 @@ func (store *Store) putSuffixO(spock spock.SPOCK) bool {
 func (store *Store) putSuffixS(spock spock.SPOCK) bool {
 	po := uint64(spock.P)<<32 | uint64(spock.O)
 	op := uint64(spock.O)<<32 | uint64(spock.P)
-	__s, has := store.pos.Get(po)
-	if !has {
+	__s, err := store.pos.Get(po)
+	if faults.IsNotFound(err) {
 		__s = skiplist.NewSet[xsd.AnyURI]()
+		// TODO: error
 		store.pos.Put(po, __s)
 		store.ops.Put(op, __s)
 	}
@@ -103,9 +131,10 @@ func (store *Store) putSuffixS(spock spock.SPOCK) bool {
 func (store *Store) putSuffixP(spock spock.SPOCK) bool {
 	so := uint64(spock.S)<<32 | uint64(spock.O)
 	os := uint64(spock.O)<<32 | uint64(spock.S)
-	__p, has := store.sop.Get(so)
-	if !has {
+	__p, err := store.sop.Get(so)
+	if faults.IsNotFound(err) {
 		__p = skiplist.NewSet[xsd.AnyURI]()
+		// TODO: error
 		store.sop.Put(so, __p)
 		store.osp.Put(os, __p)
 	}

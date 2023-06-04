@@ -18,7 +18,7 @@
 
 */
 
-package ephemeral_test
+package hybrid_test
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ import (
 	"github.com/fogfish/curie"
 	"github.com/fogfish/it/v2"
 	"github.com/kshard/spock"
-	"github.com/kshard/spock/store/ephemeral"
+	"github.com/kshard/spock/store/hybrid"
 )
 
 const (
@@ -60,8 +60,8 @@ func datasetSocialGraph() spock.Bag {
 	}
 }
 
-func setup(bag spock.Bag) *ephemeral.Store {
-	store := ephemeral.New()
+func setup(bag spock.Bag) *hybrid.Store {
+	store, _ := hybrid.New(4)
 
 	t := time.Now()
 	store.Add(bag)

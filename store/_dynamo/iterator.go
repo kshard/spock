@@ -22,6 +22,8 @@ package dynamo
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/fogfish/dynamo/v2"
 	"github.com/fogfish/dynamo/v2/service/ddb"
@@ -67,9 +69,12 @@ func (iter *Iterator[T]) Next() bool {
 	}
 
 	var err error
+	// fmt.Println(iter.query)
+	t := time.Now()
 	iter.seq, iter.cursor, err = iter.store.Match(context.TODO(),
-		iter.query, iter.cursor, dynamo.Limit(2),
+		iter.query, iter.cursor,
 	)
+	fmt.Printf("==> io %8.d in %v\n", len(iter.seq), time.Since(t))
 	if err != nil {
 		return false
 	}
@@ -82,11 +87,13 @@ func (iter *Iterator[T]) Next() bool {
 }
 
 type Unfold[T dynamo.Thing] struct {
-	seq Seq[T]
-	bag []spock.SPOCK
+	symbols Symbols
+	seq     Seq[T]
+	bag     []spock.SPOCK
 }
 
 func (unfold *Unfold[T]) Head() spock.SPOCK {
+	fmt.Println(unfold.bag[0])
 	return unfold.bag[0]
 }
 
@@ -101,8 +108,8 @@ func (unfold *Unfold[T]) Next() bool {
 	}
 
 	switch vv := any(unfold.seq.Head()).(type) {
-	case interface{ ToSPOCK() []spock.SPOCK }:
-		unfold.bag = vv.ToSPOCK()
+	case interface{ ToSPOCK(Symbols) []spock.SPOCK }:
+		unfold.bag = vv.ToSPOCK(unfold.symbols)
 	}
 
 	return true

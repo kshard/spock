@@ -43,9 +43,12 @@ type spo struct {
 	O  []string  `dynamodbav:"o,stringset"`
 }
 
-func (spo spo) HashKey() curie.IRI     { return spo.G }
-func (spo spo) SortKey() curie.IRI     { return curie.IRI(spo.SP) }
-func (spo spo) ToSPOCK() []spock.SPOCK { return decodeSPO(spo) }
+func (spo spo) HashKey() curie.IRI { return spo.G }
+func (spo spo) SortKey() curie.IRI { return curie.IRI(spo.SP) }
+
+func (spo spo) ToSPOCK(symbols Symbols) []spock.SPOCK {
+	return decodeSPO(symbols, spo)
+}
 
 func (spo spo) Put(ctx context.Context, store *Store) error {
 	_, err := store.spo.UpdateWith(ctx,
@@ -65,20 +68,20 @@ var (
 	_spo = ddb.UpdateFor[spo, []string]()
 )
 
-func encodeSPO(g curie.IRI, spock spock.SPOCK) spo {
+func encodeSPO(symbols Symbols, g curie.IRI, spock spock.SPOCK) spo {
 	return spo{
 		G:  "sp|" + g,
-		SP: encodeII(spock.S, spock.P),
-		O:  []string{encodeValue(spock.O)},
+		SP: encodeII(symbols, spock.S, spock.P),
+		O:  []string{encodeValue(symbols, spock.O)},
 	}
 }
 
-func decodeSPO(spo spo) []spock.SPOCK {
+func decodeSPO(symbols Symbols, spo spo) []spock.SPOCK {
 	seq := make([]spock.SPOCK, len(spo.O))
-	s, p := decodeII(spo.SP)
+	s, p := decodeII(symbols, spo.SP)
 
 	for i, o := range spo.O {
-		seq[i].S, seq[i].P, seq[i].O = s, p, decodeValue(o)
+		seq[i].S, seq[i].P, seq[i].O = s, p, decodeValue(symbols, o)
 	}
 
 	return seq
@@ -89,14 +92,17 @@ func decodeSPO(spo spo) []spock.SPOCK {
 //
 
 type sop struct {
-	G  curie.IRI   `dynamodbav:"prefix"`
-	SO string      `dynamodbav:"suffix"`
-	P  []curie.IRI `dynamodbav:"p,stringset"`
+	G  curie.IRI `dynamodbav:"prefix"`
+	SO string    `dynamodbav:"suffix"`
+	P  []string  `dynamodbav:"p,stringset"`
 }
 
-func (sop sop) HashKey() curie.IRI     { return sop.G }
-func (sop sop) SortKey() curie.IRI     { return curie.IRI(sop.SO) }
-func (sop sop) ToSPOCK() []spock.SPOCK { return decodeSOP(sop) }
+func (sop sop) HashKey() curie.IRI { return sop.G }
+func (sop sop) SortKey() curie.IRI { return curie.IRI(sop.SO) }
+
+func (sop sop) ToSPOCK(symbols Symbols) []spock.SPOCK {
+	return decodeSOP(symbols, sop)
+}
 
 func (sop sop) Put(ctx context.Context, store *Store) error {
 	_, err := store.sop.UpdateWith(ctx,
@@ -113,23 +119,23 @@ func (sop sop) Cut(ctx context.Context, store *Store) error {
 }
 
 var (
-	_sop = ddb.UpdateFor[sop, []curie.IRI]()
+	_sop = ddb.UpdateFor[sop, []string]()
 )
 
-func encodeSOP(g curie.IRI, spock spock.SPOCK) sop {
+func encodeSOP(symbols Symbols, g curie.IRI, spock spock.SPOCK) sop {
 	return sop{
 		G:  "so|" + g,
-		SO: encodeIV(spock.S, spock.O),
-		P:  []curie.IRI{spock.P},
+		SO: encodeIV(symbols, spock.S, spock.O),
+		P:  []string{symbols.ToSymbol(spock.P).String()},
 	}
 }
 
-func decodeSOP(sop sop) []spock.SPOCK {
+func decodeSOP(symbols Symbols, sop sop) []spock.SPOCK {
 	seq := make([]spock.SPOCK, len(sop.P))
-	s, o := decodeIV(sop.SO)
+	s, o := decodeIV(symbols, sop.SO)
 
 	for i, p := range sop.P {
-		seq[i].S, seq[i].P, seq[i].O = s, p, o
+		seq[i].S, seq[i].P, seq[i].O = s, symbols.FromString(p), o
 	}
 
 	return seq
@@ -140,14 +146,17 @@ func decodeSOP(sop sop) []spock.SPOCK {
 //
 
 type pos struct {
-	G  curie.IRI   `dynamodbav:"prefix"`
-	PO string      `dynamodbav:"suffix"`
-	S  []curie.IRI `dynamodbav:"s,stringset"`
+	G  curie.IRI `dynamodbav:"prefix"`
+	PO string    `dynamodbav:"suffix"`
+	S  []string  `dynamodbav:"s,stringset"`
 }
 
-func (pos pos) HashKey() curie.IRI     { return pos.G }
-func (pos pos) SortKey() curie.IRI     { return curie.IRI(pos.PO) }
-func (pos pos) ToSPOCK() []spock.SPOCK { return decodePOS(pos) }
+func (pos pos) HashKey() curie.IRI { return pos.G }
+func (pos pos) SortKey() curie.IRI { return curie.IRI(pos.PO) }
+
+func (pos pos) ToSPOCK(symbols Symbols) []spock.SPOCK {
+	return decodePOS(symbols, pos)
+}
 
 func (pos pos) Put(ctx context.Context, store *Store) error {
 	_, err := store.pos.UpdateWith(ctx,
@@ -164,23 +173,23 @@ func (pos pos) Cut(ctx context.Context, store *Store) error {
 }
 
 var (
-	_pos = ddb.UpdateFor[pos, []curie.IRI]()
+	_pos = ddb.UpdateFor[pos, []string]()
 )
 
-func encodePOS(g curie.IRI, spock spock.SPOCK) pos {
+func encodePOS(symbols Symbols, g curie.IRI, spock spock.SPOCK) pos {
 	return pos{
 		G:  "po|" + g,
-		PO: encodeIV(spock.P, spock.O),
-		S:  []curie.IRI{spock.S},
+		PO: encodeIV(symbols, spock.P, spock.O),
+		S:  []string{symbols.ToSymbol(spock.S).String()},
 	}
 }
 
-func decodePOS(pos pos) []spock.SPOCK {
+func decodePOS(symbols Symbols, pos pos) []spock.SPOCK {
 	seq := make([]spock.SPOCK, len(pos.S))
-	p, o := decodeIV(pos.PO)
+	p, o := decodeIV(symbols, pos.PO)
 
 	for i, s := range pos.S {
-		seq[i].S, seq[i].P, seq[i].O = s, p, o
+		seq[i].S, seq[i].P, seq[i].O = symbols.FromString(s), p, o
 	}
 
 	return seq
@@ -196,9 +205,12 @@ type pso struct {
 	O  []string  `dynamodbav:"o,stringset"`
 }
 
-func (pso pso) HashKey() curie.IRI     { return pso.G }
-func (pso pso) SortKey() curie.IRI     { return curie.IRI(pso.PS) }
-func (pso pso) ToSPOCK() []spock.SPOCK { return decodePSO(pso) }
+func (pso pso) HashKey() curie.IRI { return pso.G }
+func (pso pso) SortKey() curie.IRI { return curie.IRI(pso.PS) }
+
+func (pso pso) ToSPOCK(symbols Symbols) []spock.SPOCK {
+	return decodePSO(symbols, pso)
+}
 
 func (pso pso) Put(ctx context.Context, store *Store) error {
 	_, err := store.pso.UpdateWith(ctx,
@@ -218,20 +230,20 @@ var (
 	_pso = ddb.UpdateFor[pso, []string]()
 )
 
-func encodePSO(g curie.IRI, spock spock.SPOCK) pso {
+func encodePSO(symbols Symbols, g curie.IRI, spock spock.SPOCK) pso {
 	return pso{
 		G:  "ps|" + g,
-		PS: encodeII(spock.P, spock.S),
-		O:  []string{encodeValue(spock.O)},
+		PS: encodeII(symbols, spock.P, spock.S),
+		O:  []string{encodeValue(symbols, spock.O)},
 	}
 }
 
-func decodePSO(pso pso) []spock.SPOCK {
+func decodePSO(symbols Symbols, pso pso) []spock.SPOCK {
 	seq := make([]spock.SPOCK, len(pso.O))
-	p, s := decodeII(pso.PS)
+	p, s := decodeII(symbols, pso.PS)
 
 	for i, o := range pso.O {
-		seq[i].S, seq[i].P, seq[i].O = s, p, decodeValue(o)
+		seq[i].S, seq[i].P, seq[i].O = s, p, decodeValue(symbols, o)
 	}
 
 	return seq
@@ -242,14 +254,17 @@ func decodePSO(pso pso) []spock.SPOCK {
 //
 
 type osp struct {
-	G  curie.IRI   `dynamodbav:"prefix"`
-	OS string      `dynamodbav:"suffix"`
-	P  []curie.IRI `dynamodbav:"p,stringset"`
+	G  curie.IRI `dynamodbav:"prefix"`
+	OS string    `dynamodbav:"suffix"`
+	P  []string  `dynamodbav:"p,stringset"`
 }
 
-func (osp osp) HashKey() curie.IRI     { return osp.G }
-func (osp osp) SortKey() curie.IRI     { return curie.IRI(osp.OS) }
-func (osp osp) ToSPOCK() []spock.SPOCK { return decodeOSP(osp) }
+func (osp osp) HashKey() curie.IRI { return osp.G }
+func (osp osp) SortKey() curie.IRI { return curie.IRI(osp.OS) }
+
+func (osp osp) ToSPOCK(symbols Symbols) []spock.SPOCK {
+	return decodeOSP(symbols, osp)
+}
 
 func (osp osp) Put(ctx context.Context, store *Store) error {
 	_, err := store.osp.UpdateWith(ctx,
@@ -266,23 +281,23 @@ func (osp osp) Cut(ctx context.Context, store *Store) error {
 }
 
 var (
-	_osp = ddb.UpdateFor[osp, []curie.IRI]()
+	_osp = ddb.UpdateFor[osp, []string]()
 )
 
-func encodeOSP(g curie.IRI, spock spock.SPOCK) osp {
+func encodeOSP(symbols Symbols, g curie.IRI, spock spock.SPOCK) osp {
 	return osp{
 		G:  "os|" + g,
-		OS: encodeVI(spock.O, spock.S),
-		P:  []curie.IRI{spock.P},
+		OS: encodeVI(symbols, spock.O, spock.S),
+		P:  []string{symbols.ToSymbol(spock.P).String()},
 	}
 }
 
-func decodeOSP(osp osp) []spock.SPOCK {
+func decodeOSP(symbols Symbols, osp osp) []spock.SPOCK {
 	seq := make([]spock.SPOCK, len(osp.P))
-	o, s := decodeVI(osp.OS)
+	o, s := decodeVI(symbols, osp.OS)
 
 	for i, p := range osp.P {
-		seq[i].S, seq[i].P, seq[i].O = s, p, o
+		seq[i].S, seq[i].P, seq[i].O = s, symbols.FromString(p), o
 	}
 
 	return seq
@@ -293,14 +308,17 @@ func decodeOSP(osp osp) []spock.SPOCK {
 //
 
 type ops struct {
-	G  curie.IRI   `dynamodbav:"prefix"`
-	OP string      `dynamodbav:"suffix"`
-	S  []curie.IRI `dynamodbav:"s,stringset"`
+	G  curie.IRI `dynamodbav:"prefix"`
+	OP string    `dynamodbav:"suffix"`
+	S  []string  `dynamodbav:"s,stringset"`
 }
 
-func (ops ops) HashKey() curie.IRI     { return ops.G }
-func (ops ops) SortKey() curie.IRI     { return curie.IRI(ops.OP) }
-func (ops ops) ToSPOCK() []spock.SPOCK { return decodeOPS(ops) }
+func (ops ops) HashKey() curie.IRI { return ops.G }
+func (ops ops) SortKey() curie.IRI { return curie.IRI(ops.OP) }
+
+func (ops ops) ToSPOCK(symbols Symbols) []spock.SPOCK {
+	return decodeOPS(symbols, ops)
+}
 
 func (ops ops) Put(ctx context.Context, store *Store) error {
 	_, err := store.ops.UpdateWith(ctx,
@@ -317,23 +335,23 @@ func (ops ops) Cut(ctx context.Context, store *Store) error {
 }
 
 var (
-	_ops = ddb.UpdateFor[ops, []curie.IRI]()
+	_ops = ddb.UpdateFor[ops, []string]()
 )
 
-func encodeOPS(g curie.IRI, spock spock.SPOCK) ops {
+func encodeOPS(symbols Symbols, g curie.IRI, spock spock.SPOCK) ops {
 	return ops{
 		G:  "op|" + g,
-		OP: encodeVI(spock.O, spock.P),
-		S:  []curie.IRI{spock.S},
+		OP: encodeVI(symbols, spock.O, spock.P),
+		S:  []string{symbols.ToSymbol(spock.S).String()},
 	}
 }
 
-func decodeOPS(ops ops) []spock.SPOCK {
+func decodeOPS(symbols Symbols, ops ops) []spock.SPOCK {
 	seq := make([]spock.SPOCK, len(ops.S))
-	o, p := decodeVI(ops.OP)
+	o, p := decodeVI(symbols, ops.OP)
 
 	for i, s := range ops.S {
-		seq[i].S, seq[i].P, seq[i].O = s, p, o
+		seq[i].S, seq[i].P, seq[i].O = symbols.FromString(s), p, o
 	}
 
 	return seq
