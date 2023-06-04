@@ -29,6 +29,7 @@ import (
 	"github.com/fogfish/it/v2"
 	"github.com/kshard/spock"
 	"github.com/kshard/spock/store/hybrid"
+	"github.com/kshard/xsd"
 )
 
 const (
@@ -40,6 +41,9 @@ const (
 	F = curie.IRI("s:F")
 	G = curie.IRI("s:G")
 	N = curie.IRI("n:N")
+	b = curie.IRI("b")
+	d = curie.IRI("d")
+	g = curie.IRI("g")
 )
 
 func datasetSocialGraph() spock.Bag {
@@ -54,14 +58,14 @@ func datasetSocialGraph() spock.Bag {
 		spock.From(D, "relates", G),
 		spock.From(E, "follows", F),
 
-		spock.From(B, "status", "b"),
-		spock.From(D, "status", "d"),
-		spock.From(G, "status", "g"),
+		spock.From(B, "status", b),
+		spock.From(D, "status", d),
+		spock.From(G, "status", g),
 	}
 }
 
 func setup(bag spock.Bag) *hybrid.Store {
-	store, _ := hybrid.New(4)
+	store, _ := hybrid.New()
 
 	t := time.Now()
 	store.Add(bag)
@@ -74,7 +78,7 @@ func setup(bag spock.Bag) *hybrid.Store {
 func TestSocialGraph(t *testing.T) {
 	rds := setup(datasetSocialGraph())
 
-	Seq := func(t *testing.T, uid string, req spock.Pattern) it.SeqOf[spock.SPOCK] {
+	Seq := func(t *testing.T, uid string, req spock.Pattern[xsd.AnyURI]) it.SeqOf[spock.SPOCK] {
 		t.Helper()
 		bag := spock.Bag{}
 		seq, err := rds.Match(req)
@@ -113,7 +117,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#2: (s) ⇒ po", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(s) ⇒ po",
-				spock.Query(spock.IRI.Equal(C), nil, nil),
+				spock.Query(spock.IRI.Equal(C), spock.IRI.Any(), spock.IRI.Any()),
 			).Equal(
 				spock.From(C, "follows", B),
 				spock.From(C, "follows", E),
@@ -125,7 +129,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#2: (s) ⇒ po", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(s) ⇒ po",
-				spock.Query(spock.IRI.Equal(N), nil, nil),
+				spock.Query(spock.IRI.Equal(N), spock.IRI.Any(), spock.IRI.Any()),
 			).Equal(),
 		)
 	})
@@ -136,7 +140,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#3: (sp) ⇒ o", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(sp) ⇒ o",
-				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("follows"), nil),
+				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("follows"), spock.IRI.Any()),
 			).Equal(
 				spock.From(C, "follows", B),
 				spock.From(C, "follows", E),
@@ -147,7 +151,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#3: (sp) ⇒ o", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(sp) ⇒ o",
-				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("none"), nil),
+				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("none"), spock.IRI.Any()),
 			).Equal(),
 		)
 	})
@@ -155,7 +159,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#3: (sp) ⇒ o", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(sp) ⇒ o",
-				spock.Query(spock.IRI.Equal(N), spock.IRI.Equal("follows"), nil),
+				spock.Query(spock.IRI.Equal(N), spock.IRI.Equal("follows"), spock.IRI.Any()),
 			).Equal(),
 		)
 	})
@@ -198,7 +202,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#5: (so) ⇒ p", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(so) ⇒ p",
-				spock.Query(spock.IRI.Equal(D), nil, spock.Eq(G)),
+				spock.Query(spock.IRI.Equal(D), spock.IRI.Any(), spock.IRI.Equal(G)),
 			).Equal(
 				spock.From(D, "relates", G),
 			),
@@ -208,9 +212,9 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#5: (so) ⇒ p", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(so) ⇒ p",
-				spock.Query(spock.IRI.Equal(D), nil, spock.Eq("d")),
+				spock.Query(spock.IRI.Equal(D), spock.IRI.Any(), spock.IRI.Equal("d")),
 			).Equal(
-				spock.From(D, "status", "d"),
+				spock.From(D, "status", d),
 			),
 		)
 	})
@@ -218,7 +222,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#5: (so) ⇒ p", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(so) ⇒ p",
-				spock.Query(spock.IRI.Equal(D), nil, spock.Eq(N)),
+				spock.Query(spock.IRI.Equal(D), spock.IRI.Any(), spock.IRI.Equal(N)),
 			).Equal(),
 		)
 	})
@@ -226,7 +230,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#5: (so) ⇒ p", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(so) ⇒ p",
-				spock.Query(spock.IRI.Equal(N), nil, spock.Eq(G)),
+				spock.Query(spock.IRI.Equal(N), spock.IRI.Any(), spock.IRI.Equal(G)),
 			).Equal(),
 		)
 	})
@@ -288,7 +292,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#7: (spo) ⇒ ∅", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(spo) ⇒ ∅",
-				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("follows"), spock.Eq(E)),
+				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("follows"), spock.IRI.Equal(E)),
 			).Equal(
 				spock.From(C, "follows", E),
 			),
@@ -298,7 +302,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#7: (spo) ⇒ ∅", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(spo) ⇒ ∅",
-				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("follows"), spock.Eq(N)),
+				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("follows"), spock.IRI.Equal(N)),
 			).Equal(),
 		)
 	})
@@ -306,7 +310,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#7: (spo) ⇒ ∅", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(spo) ⇒ ∅",
-				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("none"), spock.Eq(N)),
+				spock.Query(spock.IRI.Equal(C), spock.IRI.Equal("none"), spock.IRI.Equal(N)),
 			).Equal(),
 		)
 	})
@@ -314,7 +318,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#7: (spo) ⇒ ∅", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(spo) ⇒ ∅",
-				spock.Query(spock.IRI.Equal(N), spock.IRI.Equal("none"), spock.Eq(N)),
+				spock.Query(spock.IRI.Equal(N), spock.IRI.Equal("none"), spock.IRI.Equal(N)),
 			).Equal(),
 		)
 	})
@@ -508,11 +512,11 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#11: (p) ⇒ so", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(p) ⇒ so",
-				spock.Query(nil, spock.IRI.Equal("status"), nil),
+				spock.Query(nil, spock.IRI.Equal("status"), spock.IRI.Any()),
 			).Equal(
-				spock.From(B, "status", "b"),
-				spock.From(D, "status", "d"),
-				spock.From(G, "status", "g"),
+				spock.From(B, "status", b),
+				spock.From(D, "status", d),
+				spock.From(G, "status", g),
 			),
 		)
 	})
@@ -520,7 +524,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#11: (p) ⇒ so", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(p) ⇒ so",
-				spock.Query(nil, spock.IRI.Equal("none"), nil),
+				spock.Query(nil, spock.IRI.Equal("none"), spock.IRI.Any()),
 			).Equal(),
 		)
 	})
@@ -532,7 +536,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#12: (po) ⇒ s", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(po) ⇒ s",
-				spock.Query(nil, spock.IRI.Equal("follows"), spock.Eq(B)),
+				spock.Query(nil, spock.IRI.Equal("follows"), spock.IRI.Equal(B)),
 			).Equal(
 				spock.From(A, "follows", B),
 				spock.From(C, "follows", B),
@@ -543,7 +547,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#12: (po) ⇒ s", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(po) ⇒ s",
-				spock.Query(nil, spock.IRI.Equal("follows"), spock.Eq(N)),
+				spock.Query(nil, spock.IRI.Equal("follows"), spock.IRI.Equal(N)),
 			).Equal(),
 		)
 	})
@@ -551,7 +555,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#12: (po) ⇒ s", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(po) ⇒ s",
-				spock.Query(nil, spock.IRI.Equal("none"), spock.Eq(B)),
+				spock.Query(nil, spock.IRI.Equal("none"), spock.IRI.Equal(B)),
 			).Equal(),
 		)
 	})
@@ -752,7 +756,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#17: (o) ⇒ ps", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(o) ⇒ ps",
-				spock.Query(nil, nil, spock.Eq(B)),
+				spock.Query(nil, nil, spock.IRI.Equal(B)),
 			).Equal(
 				spock.From(A, "follows", B),
 				spock.From(C, "follows", B),
@@ -764,7 +768,7 @@ func TestSocialGraph(t *testing.T) {
 	t.Run("#17: (o) ⇒ ps", func(t *testing.T) {
 		it.Then(t).Should(
 			Seq(t, "(o) ⇒ ps",
-				spock.Query(nil, nil, spock.Eq(N)),
+				spock.Query(nil, nil, spock.IRI.Equal(N)),
 			).Equal(),
 		)
 	})

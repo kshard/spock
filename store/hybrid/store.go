@@ -6,6 +6,7 @@ import (
 	"github.com/fogfish/faults"
 	"github.com/fogfish/golem/trait/seq"
 	"github.com/fogfish/segment"
+	"github.com/fogfish/segment/datastore/dynamodb"
 	"github.com/fogfish/skiplist"
 	"github.com/kshard/spock"
 	"github.com/kshard/xsd"
@@ -22,42 +23,56 @@ type Store struct {
 }
 
 // Create new instance of knowledge storage
-func New(capacity int) (*Store, error) {
-	dspo := NewDynamo[xsd.Symbol]("spo")
-	spo, err := segment.New[sp, __o](capacity, nil, dspo, dspo)
+func New() (*Store, error) {
+	dspo, _ := dynamodb.New[sp, __o]("spo", "ddb:///segment")
+	spo, err := segment.New[sp, __o](dspo, dspo,
+		skiplist.MapWithBlockSize[sp, __o](1024),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	dsop := NewDynamo[xsd.AnyURI]("sop")
-	sop, err := segment.New[so, __p](capacity, nil, dsop, dsop)
+	dsop, _ := dynamodb.New[so, __p]("sop", "ddb:///segment")
+	sop, err := segment.New[so, __p](dsop, dsop,
+		skiplist.MapWithBlockSize[so, __p](1024),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	dpso := NewDynamo[xsd.Symbol]("pso")
-	pso, err := segment.New[ps, __o](capacity, nil, dpso, dpso)
+	dpso, _ := dynamodb.New[ps, __o]("pso", "ddb:///segment")
+	pso, err := segment.New[ps, __o](dpso, dpso,
+		skiplist.MapWithBlockSize[ps, __o](1024),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	dpos := NewDynamo[xsd.AnyURI]("pos")
-	pos, err := segment.New[po, __s](capacity, nil, dpos, dpos)
+	dpos, _ := dynamodb.New[po, __s]("pos", "ddb:///segment")
+	pos, err := segment.New[po, __s](dpos, dpos,
+		skiplist.MapWithBlockSize[po, __s](1024),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	dosp := NewDynamo[xsd.AnyURI]("osp")
-	osp, err := segment.New[os, __p](capacity, nil, dosp, dosp)
+	dosp, _ := dynamodb.New[os, __p]("osp", "ddb:///segment")
+	osp, err := segment.New[os, __p](dosp, dosp,
+		skiplist.MapWithBlockSize[os, __p](1024),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	dops := NewDynamo[xsd.AnyURI]("ops")
-	ops, err := segment.New[op, __s](capacity, nil, dops, dops)
+	dops, _ := dynamodb.New[op, __s]("ops", "ddb:///segment")
+	ops, err := segment.New[op, __s](dops, dops,
+		skiplist.MapWithBlockSize[op, __s](1024),
+	)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: only 1/2 of indexes must be persistent
 
 	return &Store{
 		spo: spo,
@@ -90,33 +105,45 @@ func (store *Store) Add(bag spock.Bag) {
 	}
 }
 
-func (store *Store) Put(spock spock.SPOCK) {
+func (store *Store) Put(spock spock.SPOCK) error {
 	// spock.K = guid.L(guid.Clock)
 
-	store.putSuffixO(spock)
-	store.putSuffixS(spock)
-	store.putSuffixP(spock)
+	kind := spock.O.XSDType()
+	if kind != xsd.XSD_ANYURI /*|| kind != xsd.XSD_SYMBOL*/ {
+		return fmt.Errorf("not supported %T", spock.O)
+	}
+
+	o, ok := spock.O.(xsd.AnyURI)
+	if !ok {
+		return fmt.Errorf("not supported %T", spock.O)
+	}
+
+	store.putSuffixO(spock.S, spock.P, o)
+	store.putSuffixS(spock.S, spock.P, o)
+	store.putSuffixP(spock.S, spock.P, o)
 
 	store.size++
+	return nil
 }
 
-func (store *Store) putSuffixO(spock spock.SPOCK) bool {
-	sp := uint64(spock.S)<<32 | uint64(spock.P)
-	ps := uint64(spock.P)<<32 | uint64(spock.S)
+func (store *Store) putSuffixO(s, p, o xsd.AnyURI) bool {
+	sp := uint64(s)<<32 | uint64(p)
+	ps := uint64(p)<<32 | uint64(s)
 	__o, err := store.spo.Get(sp)
 	if faults.IsNotFound(err) {
-		__o = skiplist.NewSet[xsd.Symbol]()
+		__o = skiplist.NewSet[xsd.AnyURI]()
 		// TODO: error
 		store.spo.Put(sp, __o)
 		store.pso.Put(ps, __o)
 	}
 
-	return __o.Add(spock.O)
+	has, _ := __o.Add(o)
+	return has
 }
 
-func (store *Store) putSuffixS(spock spock.SPOCK) bool {
-	po := uint64(spock.P)<<32 | uint64(spock.O)
-	op := uint64(spock.O)<<32 | uint64(spock.P)
+func (store *Store) putSuffixS(s, p, o xsd.AnyURI) bool {
+	po := uint64(p)<<32 | uint64(o)
+	op := uint64(o)<<32 | uint64(p)
 	__s, err := store.pos.Get(po)
 	if faults.IsNotFound(err) {
 		__s = skiplist.NewSet[xsd.AnyURI]()
@@ -125,12 +152,13 @@ func (store *Store) putSuffixS(spock spock.SPOCK) bool {
 		store.ops.Put(op, __s)
 	}
 
-	return __s.Add(spock.S)
+	has, _ := __s.Add(s)
+	return has
 }
 
-func (store *Store) putSuffixP(spock spock.SPOCK) bool {
-	so := uint64(spock.S)<<32 | uint64(spock.O)
-	os := uint64(spock.O)<<32 | uint64(spock.S)
+func (store *Store) putSuffixP(s, p, o xsd.AnyURI) bool {
+	so := uint64(s)<<32 | uint64(o)
+	os := uint64(o)<<32 | uint64(s)
 	__p, err := store.sop.Get(so)
 	if faults.IsNotFound(err) {
 		__p = skiplist.NewSet[xsd.AnyURI]()
@@ -139,10 +167,11 @@ func (store *Store) putSuffixP(spock spock.SPOCK) bool {
 		store.osp.Put(os, __p)
 	}
 
-	return __p.Add(spock.P)
+	has, _ := __p.Add(p)
+	return has
 }
 
-func (store *Store) Match(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
+func (store *Store) Match(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
 	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
 		return nil, &notSupported{q}
 	}

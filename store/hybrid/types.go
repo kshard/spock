@@ -20,4 +20,4 @@ type (
 // index types for 3rd faction
 type __s = *skiplist.Set[xsd.AnyURI]
 type __p = *skiplist.Set[xsd.AnyURI]
-type __o = *skiplist.Set[xsd.Symbol]
+type __o = *skiplist.Set[xsd.AnyURI]

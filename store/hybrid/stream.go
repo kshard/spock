@@ -12,7 +12,7 @@ import (
 	"github.com/kshard/xsd"
 )
 
-type notSupported struct{ spock.Pattern }
+type notSupported struct{ spock.Pattern[xsd.AnyURI] }
 
 func (err notSupported) Error() string { return fmt.Sprintf("not supported %s", err.Pattern.Dump()) }
 func (notSupported) NotSupported()     {}
@@ -43,14 +43,14 @@ func queryIRI[A, B, C skiplist.Key](
 
 	if qA != nil && qA.Clause == spock.EQ {
 		ab, ab1 := lv.L1()
-		a__, err := list.Successors(ab)
+		a__, err := list.Successor(ab)
 		if err != nil {
 			return nil
 		}
 		a__ = pair.TakeWhile(a__,
 			func(ab uint64, __x *skiplist.Set[C]) bool { return ab < ab1 },
 		)
-		return pair.JoinSeq(a__,
+		return pair.ToSeq(a__,
 			func(ab uint64, __x *skiplist.Set[C]) seq.Seq[spock.SPOCK] {
 				return lv.ToSPOCK(ab, queryXSD(qC, __x))
 			},
@@ -61,7 +61,7 @@ func queryIRI[A, B, C skiplist.Key](
 	if err != nil {
 		return nil
 	}
-	return pair.JoinSeq(a__,
+	return pair.ToSeq(a__,
 		func(ab uint64, __x *skiplist.Set[C]) seq.Seq[spock.SPOCK] {
 			return lv.ToSPOCK(ab, queryXSD(qC, __x))
 		},
@@ -73,7 +73,7 @@ func queryXSD[A skiplist.Key](
 	list *skiplist.Set[A],
 ) seq.Seq[A] {
 	if pred != nil && pred.Clause == spock.EQ {
-		if list.Has(pred.Value) {
+		if has, _ := list.Has(pred.Value); has {
 			return seq.From(pred.Value)
 		}
 		return nil
@@ -82,43 +82,43 @@ func queryXSD[A skiplist.Key](
 	return skiplist.ForSet(list, list.Values())
 }
 
-func (store *Store) streamSPO(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
-	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.Symbol](
+func (store *Store) streamSPO(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
+	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.AnyURI](
 		q.S, q.P, q.O, querySPO(q), store.spo,
 	), nil
 }
 
-func (store *Store) streamSOP(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
-	return queryIRI[xsd.AnyURI, xsd.Symbol, xsd.AnyURI](
+func (store *Store) streamSOP(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
+	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.AnyURI](
 		q.S, q.O, q.P, querySOP(q), store.sop,
 	), nil
 }
 
-func (store *Store) streamPSO(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
-	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.Symbol](
+func (store *Store) streamPSO(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
+	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.AnyURI](
 		q.P, q.S, q.O, queryPSO(q), store.pso,
 	), nil
 }
 
-func (store *Store) streamPOS(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
-	return queryIRI[xsd.AnyURI, xsd.Symbol, xsd.AnyURI](
+func (store *Store) streamPOS(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
+	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.AnyURI](
 		q.P, q.O, q.S, queryPOS(q), store.pos,
 	), nil
 }
 
-func (store *Store) streamOSP(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
-	return queryIRI[xsd.Symbol, xsd.AnyURI, xsd.AnyURI](
+func (store *Store) streamOSP(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
+	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.AnyURI](
 		q.O, q.S, q.P, queryOSP(q), store.osp,
 	), nil
 }
 
-func (store *Store) streamOPS(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
-	return queryIRI[xsd.Symbol, xsd.AnyURI, xsd.AnyURI](
+func (store *Store) streamOPS(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
+	return queryIRI[xsd.AnyURI, xsd.AnyURI, xsd.AnyURI](
 		q.O, q.P, q.S, queryOPS(q), store.ops,
 	), nil
 }
 
-type querySPO spock.Pattern
+type querySPO spock.Pattern[xsd.AnyURI]
 
 func (q querySPO) L1() (uint64, uint64) {
 	return uint64(q.S.Value) << 32, uint64(q.S.Value+1) << 32
@@ -128,9 +128,9 @@ func (q querySPO) L2() uint64 {
 	return uint64(q.S.Value)<<32 | uint64(q.P.Value)
 }
 
-func (q querySPO) ToSPOCK(sp uint64, o seq.Seq[xsd.Symbol]) seq.Seq[spock.SPOCK] {
+func (q querySPO) ToSPOCK(sp uint64, o seq.Seq[xsd.AnyURI]) seq.Seq[spock.SPOCK] {
 	return seq.Map(o,
-		func(o xsd.Symbol) spock.SPOCK {
+		func(o xsd.AnyURI) spock.SPOCK {
 			return spock.SPOCK{
 				S: xsd.AnyURI(sp >> 32),
 				P: xsd.AnyURI(sp & (0xffffffff)),
@@ -140,7 +140,7 @@ func (q querySPO) ToSPOCK(sp uint64, o seq.Seq[xsd.Symbol]) seq.Seq[spock.SPOCK]
 	)
 }
 
-type querySOP spock.Pattern
+type querySOP spock.Pattern[xsd.AnyURI]
 
 func (q querySOP) L1() (uint64, uint64) {
 	return uint64(q.S.Value) << 32, uint64(q.S.Value+1) << 32
@@ -156,13 +156,13 @@ func (q querySOP) ToSPOCK(so uint64, p seq.Seq[xsd.AnyURI]) seq.Seq[spock.SPOCK]
 			return spock.SPOCK{
 				S: xsd.AnyURI(so >> 32),
 				P: p,
-				O: xsd.Symbol(so & (0xffffffff)),
+				O: xsd.AnyURI(so & (0xffffffff)),
 			}
 		},
 	)
 }
 
-type queryPSO spock.Pattern
+type queryPSO spock.Pattern[xsd.AnyURI]
 
 func (q queryPSO) L1() (uint64, uint64) {
 	return uint64(q.P.Value) << 32, uint64(q.P.Value+1) << 32
@@ -172,9 +172,9 @@ func (q queryPSO) L2() uint64 {
 	return uint64(q.P.Value)<<32 | uint64(q.S.Value)
 }
 
-func (q queryPSO) ToSPOCK(ps uint64, o seq.Seq[xsd.Symbol]) seq.Seq[spock.SPOCK] {
+func (q queryPSO) ToSPOCK(ps uint64, o seq.Seq[xsd.AnyURI]) seq.Seq[spock.SPOCK] {
 	return seq.Map(o,
-		func(o xsd.Symbol) spock.SPOCK {
+		func(o xsd.AnyURI) spock.SPOCK {
 			return spock.SPOCK{
 				S: xsd.AnyURI(ps & (0xffffffff)),
 				P: xsd.AnyURI(ps >> 32),
@@ -184,7 +184,7 @@ func (q queryPSO) ToSPOCK(ps uint64, o seq.Seq[xsd.Symbol]) seq.Seq[spock.SPOCK]
 	)
 }
 
-type queryPOS spock.Pattern
+type queryPOS spock.Pattern[xsd.AnyURI]
 
 func (q queryPOS) L1() (uint64, uint64) {
 	return uint64(q.P.Value) << 32, uint64(q.P.Value+1) << 32
@@ -200,13 +200,13 @@ func (q queryPOS) ToSPOCK(po uint64, s seq.Seq[xsd.AnyURI]) seq.Seq[spock.SPOCK]
 			return spock.SPOCK{
 				S: s,
 				P: xsd.AnyURI(po >> 32),
-				O: xsd.Symbol(po & (0xffffffff)),
+				O: xsd.AnyURI(po & (0xffffffff)),
 			}
 		},
 	)
 }
 
-type queryOSP spock.Pattern
+type queryOSP spock.Pattern[xsd.AnyURI]
 
 func (q queryOSP) L1() (uint64, uint64) {
 	return uint64(q.O.Value) << 32, uint64(q.O.Value+1) << 32
@@ -222,13 +222,13 @@ func (q queryOSP) ToSPOCK(os uint64, p seq.Seq[xsd.AnyURI]) seq.Seq[spock.SPOCK]
 			return spock.SPOCK{
 				S: xsd.AnyURI(os & (0xffffffff)),
 				P: p,
-				O: xsd.Symbol(os >> 32),
+				O: xsd.AnyURI(os >> 32),
 			}
 		},
 	)
 }
 
-type queryOPS spock.Pattern
+type queryOPS spock.Pattern[xsd.AnyURI]
 
 func (q queryOPS) L1() (uint64, uint64) {
 	return uint64(q.O.Value) << 32, uint64(q.O.Value+1) << 32
@@ -244,7 +244,7 @@ func (q queryOPS) ToSPOCK(op uint64, s seq.Seq[xsd.AnyURI]) seq.Seq[spock.SPOCK]
 			return spock.SPOCK{
 				S: s,
 				P: xsd.AnyURI(op & (0xffffffff)),
-				O: xsd.Symbol(op >> 32),
+				O: xsd.AnyURI(op >> 32),
 			}
 		},
 	)
