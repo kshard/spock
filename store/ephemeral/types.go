@@ -33,9 +33,9 @@ import (
 // type k = struct{} // TODO: k-order guid.K
 
 type (
-	s  = uint32
-	p  = uint32
-	o  = uint32
+	// s  = uint32
+	// p  = uint32
+	// o  = uint32
 	sp = uint64
 	so = uint64
 	ps = uint64
@@ -47,7 +47,7 @@ type (
 // index types for 3rd faction
 type __s = *skiplist.Set[xsd.AnyURI]
 type __p = *skiplist.Set[xsd.AnyURI]
-type __o = *skiplist.Set[xsd.Symbol]
+type __o = *skiplist.Set[xsd.AnyURI]
 
 // index types for 2nd faction
 // type _po = *skiplist.SkipList[p, __o]

@@ -64,56 +64,70 @@ func (store *Store) Add(bag spock.Bag) {
 	}
 }
 
-func (store *Store) Put(spock spock.SPOCK) {
+func (store *Store) Put(spock spock.SPOCK) error {
 	spock.K = guid.L(guid.Clock)
 
-	store.putSuffixO(spock)
-	store.putSuffixS(spock)
-	store.putSuffixP(spock)
+	kind := spock.O.XSDType()
+	if kind != xsd.XSD_ANYURI /*|| kind != xsd.XSD_SYMBOL*/ {
+		return fmt.Errorf("not supported %T", spock.O)
+	}
+
+	o, ok := spock.O.(xsd.AnyURI)
+	if !ok {
+		return fmt.Errorf("not supported %T", spock.O)
+	}
+
+	store.putSuffixO(spock.S, spock.P, o)
+	store.putSuffixS(spock.S, spock.P, o)
+	store.putSuffixP(spock.S, spock.P, o)
 
 	store.size++
+	return nil
 }
 
-func (store *Store) putSuffixO(spock spock.SPOCK) bool {
-	sp := uint64(spock.S)<<32 | uint64(spock.P)
-	ps := uint64(spock.P)<<32 | uint64(spock.S)
-	__o, has := store.spo.Get(sp)
-	if !has {
-		__o = skiplist.NewSet[xsd.Symbol]()
+func (store *Store) putSuffixO(s, p, o xsd.AnyURI) bool {
+	sp := uint64(s)<<32 | uint64(p)
+	ps := uint64(p)<<32 | uint64(s)
+	__o, node := store.spo.Get(sp)
+	if node == nil {
+		__o = skiplist.NewSet[xsd.AnyURI]()
 		store.spo.Put(sp, __o)
 		store.pso.Put(ps, __o)
 	}
 
-	return __o.Add(spock.O)
+	has, _ := __o.Add(o)
+	return has
 }
 
-func (store *Store) putSuffixS(spock spock.SPOCK) bool {
-	po := uint64(spock.P)<<32 | uint64(spock.O)
-	op := uint64(spock.O)<<32 | uint64(spock.P)
-	__s, has := store.pos.Get(po)
-	if !has {
+func (store *Store) putSuffixS(s, p, o xsd.AnyURI) bool {
+	po := uint64(p)<<32 | uint64(o)
+	op := uint64(o)<<32 | uint64(p)
+	__s, node := store.pos.Get(po)
+	if node == nil {
 		__s = skiplist.NewSet[xsd.AnyURI]()
 		store.pos.Put(po, __s)
 		store.ops.Put(op, __s)
 	}
 
-	return __s.Add(spock.S)
+	has, _ := __s.Add(s)
+	return has
 }
 
-func (store *Store) putSuffixP(spock spock.SPOCK) bool {
-	so := uint64(spock.S)<<32 | uint64(spock.O)
-	os := uint64(spock.O)<<32 | uint64(spock.S)
-	__p, has := store.sop.Get(so)
-	if !has {
+func (store *Store) putSuffixP(s, p, o xsd.AnyURI) bool {
+	so := uint64(s)<<32 | uint64(o)
+	os := uint64(o)<<32 | uint64(s)
+	__p, node := store.sop.Get(so)
+	if node == nil {
 		__p = skiplist.NewSet[xsd.AnyURI]()
 		store.sop.Put(so, __p)
 		store.osp.Put(os, __p)
 	}
 
-	return __p.Add(spock.P)
+	has, _ := __p.Add(p)
+	return has
 }
 
-func (store *Store) Match(q spock.Pattern) (seq.Seq[spock.SPOCK], error) {
+func (store *Store) Match(q spock.Pattern[xsd.AnyURI]) (seq.Seq[spock.SPOCK], error) {
 	if q.HintForS != spock.HINT_MATCH && q.HintForS != spock.HINT_NONE {
 		return nil, &notSupported{q}
 	}
